@@ -1095,18 +1095,20 @@ const formatDuration = (duration: number) => {
 }
 
 .harmony-segment.editing {
-  border: 3px solid #409eff !important;
-  box-shadow: 0 0 12px rgba(64, 158, 255, 0.4) !important;
-  transform: translateY(-1px);
-  animation: pulse-editing 2s ease-in-out infinite;
+  border: 2px solid #409eff !important;
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.4);
+  animation: float-editing 2s ease-in-out infinite;
+  z-index: 10;
 }
 
-@keyframes pulse-editing {
+@keyframes float-editing {
   0%, 100% {
-    box-shadow: 0 0 12px rgba(64, 158, 255, 0.4);
+    transform: translateY(0px);
+    box-shadow: 0 4px 12px rgba(64, 158, 255, 0.4);
   }
   50% {
-    box-shadow: 0 0 20px rgba(64, 158, 255, 0.6);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(64, 158, 255, 0.6);
   }
 }
 
@@ -1141,45 +1143,32 @@ const formatDuration = (duration: number) => {
   }
 }
 
+/* 拖拽把手样式 */
 .resize-handle {
   position: absolute;
-  right: -3px;
+  right: 0;
   top: 0;
   bottom: 0;
   width: 8px;
-  background: rgba(255, 255, 255, 0.1);
   cursor: ew-resize;
-  border-radius: 0 4px 4px 0;
-  transition: all 0.2s ease;
-  border: 1px solid rgba(255, 255, 255, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.resize-handle:hover {
-  background: rgba(24, 144, 255, 0.2);
-  border-color: rgba(24, 144, 255, 0.4);
-  transform: scaleX(1.2);
-}
-
-.resize-indicator {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  opacity: 0.6;
+  opacity: 0.7;
   transition: opacity 0.2s ease;
 }
 
-.resize-handle:hover .resize-indicator {
-  opacity: 1;
+.resize-handle::after {
+  content: '';
+  width: 3px;
+  height: 20px;
+  background: white;
+  border-radius: 2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-.resize-grip {
-  width: 2px;
-  height: 2px;
-  background: currentColor;
-  border-radius: 50%;
+.harmony-segment:hover .resize-handle {
+  opacity: 1;
 }
 
 .duration-tooltip {

@@ -133,19 +133,22 @@
       <!-- 右侧常驻侧边栏区域 -->
       <aside class="app-sidebar">
         <div class="sidebar-content">
-          <SidePanel 
-            v-if="selectedHarmony"
-            :harmony="selectedHarmony"
-            @update-harmony="onUpdateHarmony"
-            @delete-harmony="onDeleteHarmony"
-            @close="onCloseSidePanel"
-          />
-          <div v-else class="sidebar-placeholder">
-            <el-empty 
-              description="双击和声块进行编辑"
-              :image-size="80"
+          <Transition name="sidebar-content" mode="out-in">
+            <SidePanel 
+              v-if="selectedHarmony"
+              :key="selectedHarmony?.id"
+              :harmony="selectedHarmony"
+              @update-harmony="onUpdateHarmony"
+              @delete-harmony="onDeleteHarmony"
+              @close="onCloseSidePanel"
             />
-          </div>
+            <div v-else key="placeholder" class="sidebar-placeholder">
+              <el-empty 
+                description="双击和声块进行编辑"
+                :image-size="80"
+              />
+            </div>
+          </Transition>
         </div>
       </aside>
     </div>
@@ -570,6 +573,28 @@ const startDragCursor = (event: MouseEvent) => {
   height: 100%;
   display: flex;
   flex-direction: column;
+}
+
+/* 侧边栏内容过渡动画 */
+.sidebar-content-enter-active,
+.sidebar-content-leave-active {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-content-enter-from {
+  opacity: 0;
+  transform: translateX(20px) scale(0.95);
+}
+
+.sidebar-content-leave-to {
+  opacity: 0;
+  transform: translateX(-20px) scale(0.95);
+}
+
+.sidebar-content-enter-to,
+.sidebar-content-leave-from {
+  opacity: 1;
+  transform: translateX(0) scale(1);
 }
 
 .sidebar-placeholder {

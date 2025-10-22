@@ -28,7 +28,8 @@
       />
     </div>
 
-    <div v-if="harmony" class="edit-form">
+  <Transition name="form-content" mode="out-in">
+    <div v-if="harmony" :key="harmony.id" class="edit-form">
       <el-form
         :model="editingHarmony"
         label-width="80px"
@@ -191,6 +192,7 @@
         <!-- 时间设置已移除，现在通过拖拽直接调整 -->
       </el-form>
     </div>
+  </Transition>
   </div>
 </template>
 
@@ -460,6 +462,29 @@ const handleClose = () => {
 </script>
 
 <style scoped>
+/* 表单内容过渡动画 */
+.form-content-enter-active,
+.form-content-leave-active {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.form-content-enter-from {
+  opacity: 0;
+  transform: translateY(10px) scale(0.98);
+}
+
+.form-content-leave-to {
+  opacity: 0;
+  transform: translateY(-10px) scale(0.98);
+}
+
+.form-content-enter-to,
+.form-content-leave-from {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* 基础样式 */
 .harmony-panel {
   height: 100%;
   display: flex;
