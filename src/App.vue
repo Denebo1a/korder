@@ -75,6 +75,16 @@
           </el-select>
         </div>
         
+        <!-- 量化级别 -->
+        <div class="setting-item">
+          <span class="setting-label">量化:</span>
+          <el-select v-model="store.quantization" size="small" style="width: 100px">
+            <el-option value="quarter" label="四分音符" />
+            <el-option value="eighth" label="八分音符" />
+            <el-option value="sixteenth" label="十六分音符" />
+          </el-select>
+        </div>
+        
         <!-- 视图选项 -->
         <el-switch 
           v-model="store.showWaveform"
@@ -187,7 +197,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { 
   VideoPlay, VideoPause, Close, DArrowLeft, 
   DocumentAdd, FolderOpened, Download, Microphone, Timer 
@@ -222,6 +232,30 @@ const initSampleData = () => {
   // 创建默认片段（空白片段，不添加示例和声）
   const defaultSegment = store.createDefaultSegment();
   store.addSegment(defaultSegment);
+};
+
+// 键盘事件处理
+const handleKeyDown = (event: KeyboardEvent) => {
+  // 空格键播放/暂停
+  if (event.code === 'Space') {
+    // 阻止默认行为（如页面滚动）
+    event.preventDefault();
+    event.stopPropagation();
+    
+    // 如果焦点在输入框或可编辑元素上，不触发播放/暂停
+    const activeElement = document.activeElement;
+    if (activeElement && (
+      activeElement.tagName === 'INPUT' ||
+      activeElement.tagName === 'TEXTAREA' ||
+      activeElement.getAttribute('contenteditable') === 'true' ||
+      activeElement.closest('.el-input') ||
+      activeElement.closest('.el-textarea')
+    )) {
+      return;
+    }
+    
+    togglePlay();
+  }
 };
 
 // 生命周期
@@ -261,6 +295,14 @@ onMounted(async () => {
   
   // 初始化 transport
   transport.setBpm(store.bpm);
+  
+  // 添加键盘事件监听
+  document.addEventListener('keydown', handleKeyDown);
+});
+
+onUnmounted(() => {
+  // 移除键盘事件监听
+  document.removeEventListener('keydown', handleKeyDown);
 });
 
 // 方法

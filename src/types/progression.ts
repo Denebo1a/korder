@@ -30,6 +30,7 @@ export interface ProjectSegment {
   harmonies: HarmonySegment[]; // 和声片段列表
   key: string;            // 片段调性主音（如 "C", "D", "E"等）
   mode: string;           // 片段调式（目前仅支持 "major"）
+  timeSignature?: TimeSignature; // 片段拍号（可选，不设置则使用全局拍号）
 }
 
 // 和声轨道（保留用于兼容性）
@@ -53,12 +54,12 @@ export interface ProgressionFile {
 
 // 播放器状态
 export interface PlayerState {
-  // 播放状态
+  audioFile: File | null;
   bpm: number;
   isPlaying: boolean;
   currentSec: number;
   
-  // 项目片段数据
+  // 片段管理
   segments: ProjectSegment[];
   selectedSegmentId: string | null;
   selectedHarmonyId: string | null; // 改为使用ID而不是索引
@@ -67,7 +68,7 @@ export interface PlayerState {
   title: string;
   timeSignature: TimeSignature;
   
-  // 音频相关
+  // 音频信息
   audioDuration: number;
   hasAudio: boolean;
   volume: number;
@@ -76,6 +77,7 @@ export interface PlayerState {
   // 显示设置
   showWaveform: boolean;
   measuresPerRow: number; // 每行显示的小节数
+  quantization: QuantizationType; // 全局量化级别
 }
 
 // 和声编辑器的网格数据

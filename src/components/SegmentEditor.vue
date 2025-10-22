@@ -79,6 +79,41 @@
             <el-option label="自然大调" value="major" />
           </el-select>
         </el-form-item>
+        
+        <!-- 拍号设置 -->
+        <el-form-item label="拍号">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <el-input-number 
+              v-model="editForm.timeSignature.numerator" 
+              :min="1" 
+              :max="16" 
+              controls-position="right"
+              style="width: 80px"
+            />
+            <span>/</span>
+            <el-select 
+              v-model="editForm.timeSignature.denominator" 
+              style="width: 80px"
+            >
+              <el-option label="2" :value="2" />
+              <el-option label="4" :value="4" />
+              <el-option label="8" :value="8" />
+              <el-option label="16" :value="16" />
+            </el-select>
+            <el-button 
+              size="small" 
+              type="info" 
+              text 
+              @click="clearTimeSignature"
+              title="使用全局拍号"
+            >
+              重置
+            </el-button>
+          </div>
+          <div style="font-size: 12px; color: #909399; margin-top: 4px;">
+            留空则使用全局拍号 ({{ store.timeSignature.numerator }}/{{ store.timeSignature.denominator }})
+          </div>
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="cancelEdit">取消</el-button>
@@ -130,7 +165,11 @@ const editForm = ref({
   name: '',
   measures: 4,
   key: 'C',
-  mode: 'major'
+  mode: 'major',
+  timeSignature: {
+    numerator: 4,
+    denominator: 4
+  }
 })
 
 // 音调选项
@@ -173,7 +212,11 @@ const editSegmentInfo = () => {
     name: props.segment.name,
     measures: props.segment.measures,
     key: props.segment.key,
-    mode: props.segment.mode
+    mode: props.segment.mode,
+    timeSignature: {
+      numerator: props.segment.timeSignature?.numerator || store.timeSignature.numerator,
+      denominator: props.segment.timeSignature?.denominator || store.timeSignature.denominator
+    }
   }
   showEditDialog.value = true
 }
@@ -184,7 +227,11 @@ const cancelEdit = () => {
     name: '',
     measures: 4,
     key: 'C',
-    mode: 'major'
+    mode: 'major',
+    timeSignature: {
+      numerator: 4,
+      denominator: 4
+    }
   }
 }
 
@@ -242,7 +289,11 @@ const saveSegmentInfo = async () => {
       name: editForm.value.name.trim(),
       measures: editForm.value.measures,
       key: editForm.value.key,
-      mode: editForm.value.mode
+      mode: editForm.value.mode,
+      timeSignature: editForm.value.timeSignature.numerator === store.timeSignature.numerator && 
+                     editForm.value.timeSignature.denominator === store.timeSignature.denominator 
+                     ? undefined 
+                     : editForm.value.timeSignature
     }
     store.updateSegment(updatedSegment)
     
@@ -313,6 +364,14 @@ const closeSidePanel = () => {
   showSidePanel.value = false
   editingHarmony.value = null
   store.selectHarmony(null) // 清除选中状态
+}
+
+// 清除拍号设置，使用全局拍号
+const clearTimeSignature = () => {
+  editForm.value.timeSignature = {
+    numerator: store.timeSignature.numerator,
+    denominator: store.timeSignature.denominator
+  }
 }
 </script>
 

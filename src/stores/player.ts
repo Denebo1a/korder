@@ -4,6 +4,7 @@ import type { HarmonySegment, ProgressionFile, PlayerState, TimeSignature, Proje
 export const usePlayerStore = defineStore('player', {
   state: (): PlayerState => ({
     // 播放状态
+    audioFile: null,
     bpm: 120,
     isPlaying: false,
     currentSec: 0,
@@ -26,6 +27,7 @@ export const usePlayerStore = defineStore('player', {
     // 显示设置
     showWaveform: true,
     measuresPerRow: 4, // 每行显示的小节数
+    quantization: 'quarter' as const, // 默认四分音符量化
   }),
 
   getters: {
@@ -251,6 +253,10 @@ export const usePlayerStore = defineStore('player', {
     setProjectInfo(title: string, timeSignature: TimeSignature) {
       this.title = title;
       this.timeSignature = timeSignature;
+    },
+
+    setQuantization(quantization: 'quarter' | 'eighth' | 'sixteenth') {
+      this.quantization = quantization;
     },
 
     // 项目文件操作
