@@ -152,23 +152,176 @@ export const usePlayerStore = defineStore('player', {
         if (harmonyIndex !== -1) {
           const currentHarmony = segment.harmonies[harmonyIndex];
           if (!currentHarmony) continue;
+
+          const beatsPerMeasure = segment.timeSignature?.numerator ?? this.timeSignature.numerator;
+          const segmentTotalBeats = segment.measures * beatsPerMeasure;
+
+          // 拟更新值
+          let newStart = updates.startBeat ?? currentHarmony.startBeat;
+          let newDuration = updates.duration ?? currentHarmony.duration;
+
+          // 确保最小持续时间（至少1/16拍）
+          const minDuration = 0.0625;
+          newDuration = Math.max(minDuration, newDuration);
+
+          // 获取其他和声块，按起始拍排序
+          const others = segment.harmonies
+            .filter(h => h.id !== harmonyId)
+            .sort((a, b) => a.startBeat - b.startBeat);
+
+          // 严格的重叠检测：找到可用的空间区间
+          const availableSpaces = this.findAvailableSpaces(others, segmentTotalBeats);
           
+          // 寻找最适合的空间区间
+          const targetSpace = this.findBestFitSpace(availableSpaces, newStart, newDuration);
+          
+          if (!targetSpace) {
+            // 没有合适的空间，尝试在当前位置附近寻找
+            const nearestSpace = this.findNearestSpace(availableSpaces, newStart, newDuration);
+            if (nearestSpace) {
+              newStart = nearestSpace.start;
+              newDuration = Math.min(newDuration, nearestSpace.end - nearestSpace.start);
+            } else {
+              // 完全没有空间，拒绝更新
+              console.warn(`无法更新和声 ${harmonyId}：没有足够的空间`);
+              break;
+            }
+          } else {
+            // 在找到的空间内调整位置和持续时间
+            newStart = Math.max(targetSpace.start, Math.min(newStart, targetSpace.end - newDuration));
+            newDuration = Math.min(newDuration, targetSpace.end - newStart);
+          }
+
+          // 确保不超出片段边界
+          newStart = Math.max(0, Math.min(newStart, segmentTotalBeats - minDuration));
+          newDuration = Math.min(newDuration, segmentTotalBeats - newStart);
+
           const updatedHarmonies = [...segment.harmonies];
-          updatedHarmonies[harmonyIndex] = { 
-            ...currentHarmony, 
+          updatedHarmonies[harmonyIndex] = {
+            ...currentHarmony,
             ...updates,
+            startBeat: newStart,
+            duration: newDuration,
             id: currentHarmony.id // 确保ID不被覆盖
           };
-          
+
           const updatedSegment = {
             ...segment,
             harmonies: updatedHarmonies.sort((a, b) => a.startBeat - b.startBeat)
           };
-          
+
           this.updateSegment(updatedSegment);
           break;
         }
       }
+    },
+
+    // 辅助方法：查找所有可用的空间区间
+    findAvailableSpaces(harmonies: HarmonySegment[], totalBeats: number): Array<{start: number, end: number}> {
+      const spaces: Array<{start: number, end: number}> = [];
+      const sortedHarmonies = [...harmonies].sort((a, b) => a.startBeat - b.startBeat);
+
+      // 检查开头的空间
+      if (sortedHarmonies.length === 0 || sortedHarmonies[0].startBeat > 0) {
+        spaces.push({
+          start: 0,
+          end: sortedHarmonies.length > 0 ? sortedHarmonies[0].startBeat : totalBeats
+        });
+      }
+
+      // 检查中间的空隙
+      for (let i = 0; i < sortedHarmonies.length - 1; i++) {
+        const current = sortedHarmonies[i];
+        const next = sortedHarmonies[i + 1];
+        const gapStart = current.startBeat + current.duration;
+        const gapEnd = next.startBeat;
+
+        if (gapEnd > gapStart) {
+          spaces.push({ start: gapStart, end: gapEnd });
+        }
+      }
+
+      // 检查结尾的空间
+      if (sortedHarmonies.length > 0) {
+        const lastHarmony = sortedHarmonies[sortedHarmonies.length - 1];
+        const endSpace = lastHarmony.startBeat + lastHarmony.duration;
+        if (endSpace < totalBeats) {
+          spaces.push({ start: endSpace, end: totalBeats });
+        }
+      }
+
+      return spaces;
+    },
+
+    // 辅助方法：找到最适合的空间区间
+    findBestFitSpace(
+      spaces: Array<{start: number, end: number}>, 
+      targetStart: number, 
+      targetDuration: number
+    ): {start: number, end: number} | null {
+      for (const space of spaces) {
+        // 检查空间是否足够大
+        if (space.end - space.start >= targetDuration) {
+          // 检查目标起始位置是否在这个空间内
+          if (targetStart >= space.start && targetStart + targetDuration <= space.end) {
+            return space;
+          }
+        }
+      }
+      return null;
+    },
+
+    // 辅助方法：找到最近的可用空间
+    findNearestSpace(
+      spaces: Array<{start: number, end: number}>, 
+      targetStart: number, 
+      targetDuration: number
+    ): {start: number, end: number} | null {
+      let nearestSpace: {start: number, end: number} | null = null;
+      let minDistance = Infinity;
+
+      for (const space of spaces) {
+        if (space.end - space.start >= targetDuration) {
+          // 计算到目标位置的距离
+          let distance: number;
+          if (targetStart < space.start) {
+            distance = space.start - targetStart;
+          } else if (targetStart > space.end - targetDuration) {
+            distance = targetStart - (space.end - targetDuration);
+          } else {
+            distance = 0; // 目标位置在空间内
+          }
+
+          if (distance < minDistance) {
+            minDistance = distance;
+            nearestSpace = space;
+          }
+        }
+      }
+
+      return nearestSpace;
+    },
+
+    // 检查和声是否会与其他和声重叠
+    checkHarmonyOverlap(
+      segmentId: string, 
+      startBeat: number, 
+      duration: number, 
+      excludeHarmonyId?: string
+    ): boolean {
+      const segment = this.segments.find(s => s.id === segmentId);
+      if (!segment) return false;
+
+      const endBeat = startBeat + duration;
+      
+      return segment.harmonies.some(harmony => {
+        if (excludeHarmonyId && harmony.id === excludeHarmonyId) return false;
+        
+        const harmonyEnd = harmony.startBeat + harmony.duration;
+        
+        // 检查是否有重叠：两个区间重叠的条件是 start1 < end2 && start2 < end1
+        return startBeat < harmonyEnd && harmony.startBeat < endBeat;
+      });
     },
 
     removeHarmony(harmonyId: string) {

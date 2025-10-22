@@ -67,6 +67,7 @@
                   :class="{
                     dragging: isDragging && draggedHarmonyId === harmony.id,
                     resizing: isResizing && resizedHarmonyId === harmony.id,
+                    'drag-invalid': isDragging && draggedHarmonyId === harmony.id && dragPreviewPosition && !dragPreviewPosition.isValid,
                   }"
                   :style="
                     getHarmonyStyle(harmony, (rowIndex - 1) * 4 + colIndex - 1)
@@ -164,6 +165,9 @@ const dragStartX = ref(0);
 const dragStartBeat = ref(0);
 const resizeStartX = ref(0);
 const resizeStartDuration = ref(0);
+// 垂直拖拽支持
+const dragStartY = ref(0);
+const rowHeightPx = ref(0);
 
 // 计算属性
 const beatsPerMeasure = computed(() => {
@@ -172,6 +176,7 @@ const beatsPerMeasure = computed(() => {
     props.segment.timeSignature?.numerator || store.timeSignature.numerator
   );
 });
+const beatsPerRow = computed(() => 4 * beatsPerMeasure.value);
 
 // 获取量化细分
 const getSubdivisions = () => {
@@ -473,42 +478,49 @@ const canAddHarmonyAt = (measureIndex: number) => {
   const measureStart = measureIndex * beatsPerMeasure.value;
   const measureEnd = (measureIndex + 1) * beatsPerMeasure.value;
 
-  // 检查该小节是否有空间
-  const measureHarmonies = getMeasureHarmonies(measureIndex);
+  // 检查该小节是否有任何和声块
+  const harmoniesInMeasure = props.segment.harmonies.filter(harmony => {
+    const harmonyEndBeat = harmony.startBeat + harmony.duration;
+    return (
+      (harmony.startBeat >= measureStart && harmony.startBeat < measureEnd) ||
+      (harmonyEndBeat > measureStart && harmonyEndBeat <= measureEnd) ||
+      (harmony.startBeat < measureStart && harmonyEndBeat > measureEnd)
+    );
+  });
 
-  if (measureHarmonies.length === 0) {
-    return true; // 空小节可以添加
-  }
-
-  // 检查是否有空隙
-  const sortedHarmonies = measureHarmonies
-    .map((h) => ({
-      start: Math.max(h.startBeat, measureStart),
-      end: Math.min(h.startBeat + h.duration, measureEnd),
-    }))
-    .sort((a, b) => a.start - b.start);
-
-  // 检查开头是否有空间
-  if (
-    sortedHarmonies.length > 0 &&
-    sortedHarmonies[0] &&
-    sortedHarmonies[0].start > measureStart
-  ) {
+  // 如果小节内没有和声块，可以添加
+  if (harmoniesInMeasure.length === 0) {
     return true;
   }
 
-  // 检查中间是否有空隙
+  // 检查是否有足够的空间添加新和声（至少需要1拍的空间）
+  const minDuration = 1; // 最小和声持续时间为1拍
+  
+  // 按起始拍排序
+  const sortedHarmonies = harmoniesInMeasure.sort((a, b) => a.startBeat - b.startBeat);
+  
+  // 检查小节开始到第一个和声之间的空间
+  if (sortedHarmonies[0].startBeat - measureStart >= minDuration) {
+    return true;
+  }
+  
+  // 检查和声之间的空隙
   for (let i = 0; i < sortedHarmonies.length - 1; i++) {
-    const current = sortedHarmonies[i];
-    const next = sortedHarmonies[i + 1];
-    if (current && next && current.end < next.start) {
+    const currentEnd = sortedHarmonies[i].startBeat + sortedHarmonies[i].duration;
+    const nextStart = sortedHarmonies[i + 1].startBeat;
+    if (nextStart - currentEnd >= minDuration) {
       return true;
     }
   }
-
-  // 检查结尾是否有空间
+  
+  // 检查最后一个和声到小节结束的空间
   const lastHarmony = sortedHarmonies[sortedHarmonies.length - 1];
-  return lastHarmony ? lastHarmony.end < measureEnd : true;
+  const lastEnd = lastHarmony.startBeat + lastHarmony.duration;
+  if (measureEnd - lastEnd >= minDuration) {
+    return true;
+  }
+
+  return false;
 };
 
 // 获取添加按钮的位置
@@ -548,10 +560,67 @@ const addHarmony = (measureIndex: number) => {
     return;
   }
 
-  const startBeat = store.getNextAvailableBeat(props.segment.id, measureIndex);
-  const measureEnd = (measureIndex + 1) * beatsPerMeasure.value;
-  const maxDuration = measureEnd - startBeat;
-  const duration = Math.min(1, maxDuration); // 默认1拍，但不超过可用空间
+  const measureStartBeat = measureIndex * beatsPerMeasure.value;
+  const measureEndBeat = (measureIndex + 1) * beatsPerMeasure.value;
+
+  // 找到最佳的放置位置
+  const harmoniesInMeasure = props.segment.harmonies.filter(harmony => {
+    const harmonyEndBeat = harmony.startBeat + harmony.duration;
+    return (
+      (harmony.startBeat >= measureStartBeat && harmony.startBeat < measureEndBeat) ||
+      (harmonyEndBeat > measureStartBeat && harmonyEndBeat <= measureEndBeat) ||
+      (harmony.startBeat < measureStartBeat && harmonyEndBeat > measureEndBeat)
+    );
+  });
+
+  let startBeat = measureStartBeat;
+  let duration = 1; // 默认持续时间为1拍
+
+  if (harmoniesInMeasure.length === 0) {
+    // 空小节，放在开头
+    startBeat = measureStartBeat;
+    duration = Math.min(beatsPerMeasure.value, 2); // 默认2拍或整个小节
+  } else {
+    // 按起始拍排序
+    const sortedHarmonies = harmoniesInMeasure.sort((a, b) => a.startBeat - b.startBeat);
+    
+    // 尝试在小节开始放置
+    if (sortedHarmonies[0].startBeat - measureStartBeat >= 1) {
+      startBeat = measureStartBeat;
+      duration = Math.min(sortedHarmonies[0].startBeat - measureStartBeat, 2);
+    } else {
+      // 寻找和声之间的空隙
+      let placed = false;
+      for (let i = 0; i < sortedHarmonies.length - 1; i++) {
+        const currentEnd = sortedHarmonies[i].startBeat + sortedHarmonies[i].duration;
+        const nextStart = sortedHarmonies[i + 1].startBeat;
+        const availableSpace = nextStart - currentEnd;
+        
+        if (availableSpace >= 1) {
+          startBeat = currentEnd;
+          duration = Math.min(availableSpace, 2);
+          placed = true;
+          break;
+        }
+      }
+      
+      // 如果没有找到空隙，尝试在最后放置
+      if (!placed) {
+        const lastHarmony = sortedHarmonies[sortedHarmonies.length - 1];
+        const lastEnd = lastHarmony.startBeat + lastHarmony.duration;
+        const availableSpace = measureEndBeat - lastEnd;
+        
+        if (availableSpace >= 1) {
+          startBeat = lastEnd;
+          duration = Math.min(availableSpace, 2);
+        } else {
+          // 没有足够空间，不应该到达这里（canAddHarmonyAt应该已经检查过）
+          console.warn('No space available for new harmony');
+          return;
+        }
+      }
+    }
+  }
 
   if (duration <= 0) {
     console.warn("没有足够空间添加和声");
@@ -602,6 +671,7 @@ const editHarmony = (harmony: HarmonySegment) => {
 const dragCandidateHarmonyId = ref<string | null>(null);
 const draggingInitiated = ref(false);
 const DRAG_START_THRESHOLD_PX = 4;
+const dragPreviewPosition = ref<{ startBeat: number; isValid: boolean } | null>(null);
 
 const startDrag = (event: MouseEvent, harmony: HarmonySegment) => {
   // 双击仅用于编辑，不触发拖拽
@@ -613,7 +683,13 @@ const startDrag = (event: MouseEvent, harmony: HarmonySegment) => {
   draggingInitiated.value = false;
   dragCandidateHarmonyId.value = harmony.id;
   dragStartX.value = event.clientX;
+  dragStartY.value = event.clientY;
   dragStartBeat.value = harmony.startBeat;
+  dragPreviewPosition.value = null;
+
+  // 获取行高用于计算垂直跨行
+  const rowEl = document.querySelector('.row-container') as HTMLElement | null;
+  rowHeightPx.value = rowEl?.offsetHeight || 120;
 
   document.addEventListener("mousemove", handleDrag);
   document.addEventListener("mouseup", endDrag);
@@ -623,7 +699,7 @@ const handleDrag = (event: MouseEvent) => {
   if (!dragCandidateHarmonyId.value) return;
 
   const deltaX = event.clientX - dragStartX.value;
-  const deltaBeat = deltaX / store.pxPerBeat;
+  const deltaBeatX = deltaX / store.pxPerBeat;
 
   // 只有超过阈值后才认为进入拖拽状态，避免轻微抖动及双击触发动画
   if (!draggingInitiated.value) {
@@ -633,12 +709,36 @@ const handleDrag = (event: MouseEvent) => {
     draggedHarmonyId.value = dragCandidateHarmonyId.value;
   }
 
-  const newStartBeat = Math.max(0, dragStartBeat.value + deltaBeat);
+  // 计算垂直方向跨行带来的拍子偏移
+  const deltaY = event.clientY - dragStartY.value;
+  const deltaRows = rowHeightPx.value > 0 ? Math.round(deltaY / rowHeightPx.value) : 0;
+  const deltaBeatY = deltaRows * beatsPerRow.value;
+
+  const newStartBeat = Math.max(0, dragStartBeat.value + deltaBeatX + deltaBeatY);
 
   // 量化到最近的细分
   const quantizedBeat = quantizeBeat(newStartBeat);
 
-  if (draggedHarmonyId.value) {
+  // 获取当前拖拽的和声信息
+  const currentHarmony = props.segment.harmonies.find(h => h.id === draggedHarmonyId.value);
+  if (!currentHarmony) return;
+
+  // 检查新位置是否会造成重叠
+  const wouldOverlap = store.checkHarmonyOverlap(
+    props.segment.id,
+    quantizedBeat,
+    currentHarmony.duration,
+    draggedHarmonyId.value
+  );
+
+  // 更新预览位置状态
+  dragPreviewPosition.value = {
+    startBeat: quantizedBeat,
+    isValid: !wouldOverlap
+  };
+
+  // 只有在不会重叠的情况下才实际更新位置
+  if (!wouldOverlap && draggedHarmonyId.value) {
     store.updateHarmony(draggedHarmonyId.value, { startBeat: quantizedBeat });
   }
 };
@@ -648,6 +748,7 @@ const endDrag = () => {
   draggedHarmonyId.value = null;
   dragCandidateHarmonyId.value = null;
   draggingInitiated.value = false;
+  dragPreviewPosition.value = null;
 
   document.removeEventListener("mousemove", handleDrag);
   document.removeEventListener("mouseup", endDrag);
@@ -674,7 +775,37 @@ const handleResize = (event: MouseEvent) => {
   const quantizedDuration = quantizeBeat(unclamped);
   const finalDuration = Math.max(minStep, quantizedDuration);
 
-  store.updateHarmony(resizedHarmonyId.value, { duration: finalDuration });
+  // 获取当前调整大小的和声信息
+  const currentHarmony = props.segment.harmonies.find(h => h.id === resizedHarmonyId.value);
+  if (!currentHarmony) return;
+
+  // 检查新的持续时间是否会造成重叠
+  const wouldOverlap = store.checkHarmonyOverlap(
+    props.segment.id,
+    currentHarmony.startBeat,
+    finalDuration,
+    resizedHarmonyId.value
+  );
+
+  // 如果会重叠，计算允许的最大持续时间
+  if (wouldOverlap) {
+    const beatsPerMeasure = props.segment.timeSignature?.numerator || store.timeSignature.numerator;
+    const segmentTotalBeats = props.segment.measures * beatsPerMeasure;
+    
+    // 找到右侧最近的和声块
+    const rightNeighbor = props.segment.harmonies
+      .filter(h => h.id !== resizedHarmonyId.value && h.startBeat > currentHarmony.startBeat)
+      .sort((a, b) => a.startBeat - b.startBeat)[0];
+    
+    const maxEndBeat = rightNeighbor ? rightNeighbor.startBeat : segmentTotalBeats;
+    const maxDuration = maxEndBeat - currentHarmony.startBeat;
+    const clampedDuration = Math.max(minStep, Math.min(finalDuration, maxDuration));
+    
+    store.updateHarmony(resizedHarmonyId.value, { duration: clampedDuration });
+  } else {
+    // 只有在不会重叠的情况下才实际更新持续时间
+    store.updateHarmony(resizedHarmonyId.value, { duration: finalDuration });
+  }
 };
 
 const endResize = () => {
@@ -962,6 +1093,12 @@ const formatDuration = (duration: number) => {
   animation: float 0.6s ease-in-out infinite alternate;
 }
 
+.harmony-segment.drag-invalid {
+  background-color: #f56c6c !important;
+  border-color: #f56c6c !important;
+  animation: shake 0.3s ease-in-out infinite;
+}
+
 .harmony-segment.resizing {
   box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
 }
@@ -972,6 +1109,18 @@ const formatDuration = (duration: number) => {
   }
   100% {
     transform: translateY(-6px);
+  }
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0) translateY(-4px);
+  }
+  25% {
+    transform: translateX(-2px) translateY(-4px);
+  }
+  75% {
+    transform: translateX(2px) translateY(-4px);
   }
 }
 
