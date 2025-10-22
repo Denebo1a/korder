@@ -66,15 +66,6 @@
           />
         </div>
         
-        <!-- 每行小节数 -->
-        <div class="setting-item">
-          <span class="setting-label">每行:</span>
-          <el-select v-model="store.measuresPerRow" size="small" style="width: 80px">
-            <el-option :value="4" label="4小节" />
-            <el-option :value="8" label="8小节" />
-          </el-select>
-        </div>
-        
         <!-- 量化级别 -->
         <div class="setting-item">
           <span class="setting-label">量化:</span>

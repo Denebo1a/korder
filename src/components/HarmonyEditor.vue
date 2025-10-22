@@ -13,22 +13,23 @@
           <div
             v-for="colIndex in 4"
             :key="colIndex"
-            v-show="(rowIndex - 1) * 4 + colIndex <= segment.measures"
             class="measure-container"
             :class="{
               'measure-first': colIndex === 1,
-              'measure-last':
-                colIndex === 4 ||
-                (rowIndex - 1) * 4 + colIndex === segment.measures,
+              'measure-last': colIndex === 4 || (rowIndex - 1) * 4 + colIndex === segment.measures,
+              'measure-empty': (rowIndex - 1) * 4 + colIndex > segment.measures,
             }"
           >
-            <!-- 小节数字标记 -->
-            <div class="measure-number">
+            <!-- 小节数字标记，仅显示存在的小节 -->
+            <div
+              v-if="(rowIndex - 1) * 4 + colIndex <= segment.measures"
+              class="measure-number"
+            >
               {{ (rowIndex - 1) * 4 + colIndex }}
             </div>
 
-            <!-- 小节内容 -->
-            <div class="measure-content">
+            <!-- 小节内容，仅渲染存在的小节 -->
+            <div v-if="(rowIndex - 1) * 4 + colIndex <= segment.measures" class="measure-content">
               <!-- 拍子网格背景 -->
               <div class="beat-grid">
                 <div
@@ -44,9 +45,7 @@
                     ),
                   }"
                 >
-                  <span v-if="subdivision.isBeatStart">{{
-                    subdivision.beatNumber
-                  }}</span>
+                  <span v-if="subdivision.isBeatStart">{{ subdivision.beatNumber }}</span>
                 </div>
               </div>
 
@@ -54,9 +53,7 @@
               <div
                 v-if="isPlayingInMeasure((rowIndex - 1) * 4 + colIndex - 1)"
                 class="playback-cursor"
-                :style="
-                  getPlaybackCursorStyle((rowIndex - 1) * 4 + colIndex - 1)
-                "
+                :style="getPlaybackCursorStyle((rowIndex - 1) * 4 + colIndex - 1)"
               ></div>
 
               <!-- 和声片段 -->
@@ -671,12 +668,13 @@ const handleResize = (event: MouseEvent) => {
 
   const deltaX = event.clientX - resizeStartX.value;
   const deltaBeat = deltaX / store.pxPerBeat;
-  const newDuration = Math.max(0.25, resizeStartDuration.value + deltaBeat);
 
-  // 量化到最近的细分
-  const quantizedDuration = quantizeBeat(newDuration);
+  const minStep = 1 / getSubdivisionsPerBeat();
+  const unclamped = resizeStartDuration.value + deltaBeat;
+  const quantizedDuration = quantizeBeat(unclamped);
+  const finalDuration = Math.max(minStep, quantizedDuration);
 
-  store.updateHarmony(resizedHarmonyId.value, { duration: quantizedDuration });
+  store.updateHarmony(resizedHarmonyId.value, { duration: finalDuration });
 };
 
 const endResize = () => {
