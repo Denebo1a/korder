@@ -1,12 +1,33 @@
 <template>
-  <el-drawer
-    v-model="visible"
-    title="编辑和声片段"
-    direction="rtl"
-    size="450px"
-    :before-close="handleClose"
-    class="harmony-drawer"
-  >
+  <div class="harmony-panel">
+    <div class="panel-header">
+      <h3 class="panel-title">编辑和声片段</h3>
+      <div v-if="harmony" class="header-actions">
+        <el-color-picker
+          v-model="editingHarmony.color"
+          @change="updateHarmony"
+          :predefine="predefineColors"
+          show-alpha
+          size="small"
+        />
+        <el-button
+          type="danger"
+          @click="deleteHarmony"
+          :icon="Delete"
+          size="small"
+          circle
+        >
+        </el-button>
+      </div>
+      <el-button
+        @click="handleClose"
+        :icon="Close"
+        size="small"
+        circle
+        class="close-btn"
+      />
+    </div>
+
     <div v-if="harmony" class="edit-form">
       <el-form
         :model="editingHarmony"
@@ -20,31 +41,36 @@
           <h4 class="section-title">基本信息</h4>
 
           <el-form-item label="根音级数" prop="rootDegree">
-            <el-select
-              v-model="editingHarmony.rootDegree"
-              @change="updateHarmony"
-              style="width: 100%"
-              placeholder="选择根音级数"
-            >
-              <el-option label="I" value="I" />
-              <el-option label="II" value="II" />
-              <el-option label="III" value="III" />
-              <el-option label="IV" value="IV" />
-              <el-option label="V" value="V" />
-              <el-option label="VI" value="VI" />
-              <el-option label="VII" value="VII" />
-            </el-select>
+            <div class="inline-controls">
+              <el-select
+                v-model="editingHarmony.rootDegree"
+                @change="updateHarmony"
+                placeholder="选择根音级数"
+                size="small"
+                class="degree-select"
+              >
+                <el-option label="I" value="I" />
+                <el-option label="II" value="II" />
+                <el-option label="III" value="III" />
+                <el-option label="IV" value="IV" />
+                <el-option label="V" value="V" />
+                <el-option label="VI" value="VI" />
+                <el-option label="VII" value="VII" />
+              </el-select>
+              <el-radio-group
+                v-model="editingHarmony.accidental"
+                @change="updateHarmony"
+                size="small"
+                class="accidental-group"
+              >
+                <el-radio value="">无变化</el-radio>
+                <el-radio value="b">♭</el-radio>
+                <el-radio value="#">♯</el-radio>
+              </el-radio-group>
+            </div>
           </el-form-item>
 
-          <el-form-item label="升降号" prop="accidental">
-            <el-radio-group
-              v-model="editingHarmony.accidental"
-              @change="updateHarmony"
-            >
-              <el-radio value="">无</el-radio>
-              <el-radio value="b">♭</el-radio>
-              <el-radio value="#">♯</el-radio>
-            </el-radio-group>
+          <el-form-item label="升降号" prop="accidental" style="display: none">
           </el-form-item>
 
           <el-form-item label="和弦类型" prop="chordType">
@@ -53,6 +79,7 @@
               @change="updateHarmony"
               style="width: 100%"
               placeholder="选择和弦类型"
+              size="small"
             >
               <el-option label="大三和弦 (Maj)" value="major" />
               <el-option label="小三和弦 (m)" value="minor" />
@@ -69,6 +96,7 @@
             <el-radio-group
               v-model="editingHarmony.suspensionType"
               @change="updateHarmony"
+              size="small"
             >
               <el-radio value="">无</el-radio>
               <el-radio value="sus2">sus2</el-radio>
@@ -82,33 +110,41 @@
           <h4 class="section-title">高级设置</h4>
 
           <el-form-item label="低音级数" prop="bassDegree">
-            <el-select
-              v-model="editingHarmony.bassDegree"
-              @change="updateHarmony"
-              placeholder="选择低音级数"
-              clearable
-              style="width: 100%"
-            >
-              <el-option label="I" value="I" />
-              <el-option label="II" value="II" />
-              <el-option label="III" value="III" />
-              <el-option label="IV" value="IV" />
-              <el-option label="V" value="V" />
-              <el-option label="VI" value="VI" />
-              <el-option label="VII" value="VII" />
-            </el-select>
+            <div class="inline-controls">
+              <el-select
+                v-model="editingHarmony.bassDegree"
+                @change="updateHarmony"
+                placeholder="选择低音级数"
+                clearable
+                size="small"
+                class="degree-select"
+              >
+                <el-option label="I" value="I" />
+                <el-option label="II" value="II" />
+                <el-option label="III" value="III" />
+                <el-option label="IV" value="IV" />
+                <el-option label="V" value="V" />
+                <el-option label="VI" value="VI" />
+                <el-option label="VII" value="VII" />
+              </el-select>
+              <el-radio-group
+                v-model="editingHarmony.bassAccidental"
+                @change="updateHarmony"
+                size="small"
+                class="accidental-group"
+              >
+                <el-radio value="">无变化</el-radio>
+                <el-radio value="b">♭</el-radio>
+                <el-radio value="#">♯</el-radio>
+              </el-radio-group>
+            </div>
           </el-form-item>
 
-          <el-form-item label="低音升降号" prop="bassAccidental">
-            <el-radio-group
-              v-model="editingHarmony.bassAccidental"
-              @change="updateHarmony"
-              size="small"
-            >
-              <el-radio value="">无</el-radio>
-              <el-radio value="b">♭</el-radio>
-              <el-radio value="#">♯</el-radio>
-            </el-radio-group>
+          <el-form-item
+            label="低音升降号"
+            prop="bassAccidental"
+            style="display: none"
+          >
           </el-form-item>
 
           <el-form-item label="扩展音" prop="extensions">
@@ -119,6 +155,7 @@
               style="width: 100%"
               collapse-tags
               collapse-tags-tooltip
+              size="small"
             >
               <el-option value="9" label="9" />
               <el-option value="b9" label="♭9" />
@@ -138,6 +175,7 @@
               style="width: 100%"
               collapse-tags
               collapse-tags-tooltip
+              size="small"
             >
               <el-option value="Root" label="Root" />
               <el-option value="3" label="3" />
@@ -150,80 +188,15 @@
         </div>
 
         <!-- 时间设置 -->
-        <div class="form-section">
-          <h4 class="section-title">时间设置</h4>
-
-          <el-form-item label="起始拍" prop="startBeat">
-            <el-input-number
-              v-model="editingHarmony.startBeat"
-              @change="updateHarmony"
-              :min="0"
-              :step="0.25"
-              :precision="2"
-              style="width: 100%"
-              controls-position="right"
-            />
-          </el-form-item>
-
-          <el-form-item label="持续拍数" prop="duration">
-            <el-input-number
-              v-model="editingHarmony.duration"
-              @change="updateHarmony"
-              :min="0.25"
-              :max="16"
-              :step="0.25"
-              :precision="2"
-              style="width: 100%"
-              controls-position="right"
-            />
-          </el-form-item>
-        </div>
-
-        <!-- 外观设置 -->
-        <div class="form-section">
-          <h4 class="section-title">外观设置</h4>
-
-          <el-form-item label="颜色" prop="color">
-            <el-color-picker
-              v-model="editingHarmony.color"
-              @change="updateHarmony"
-              :predefine="predefineColors"
-              show-alpha
-            />
-          </el-form-item>
-        </div>
+        <!-- 时间设置已移除，现在通过拖拽直接调整 -->
       </el-form>
-
-      <!-- 预览区域 -->
-      <div class="preview-section">
-        <h4 class="section-title">预览</h4>
-        <div
-          class="harmony-preview"
-          :style="{ backgroundColor: props.harmony?.color }"
-        >
-          <span class="preview-chord-degree" v-html="previewChordDegree"></span>
-          <span class="preview-chord-name" v-html="previewChordName"></span>
-        </div>
-      </div>
-
-      <!-- 操作按钮 -->
-      <div class="form-actions">
-        <el-button type="danger" @click="deleteHarmony" :icon="Delete">
-          删除和声
-        </el-button>
-        <el-button @click="handleClose"> 关闭 </el-button>
-        <el-button type="primary" @click="saveHarmony" :loading="saving">
-          保存
-        </el-button>
-      </div>
     </div>
-  </el-drawer>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, reactive, computed } from "vue";
 import {
-  ElDrawer,
   ElForm,
   ElFormItem,
   ElInput,
@@ -235,18 +208,16 @@ import {
   ElMessage,
   ElMessageBox,
 } from "element-plus";
-import { Delete } from "@element-plus/icons-vue";
+import { Delete, Close } from "@element-plus/icons-vue";
 import { usePlayerStore } from "../stores/player";
 import type { HarmonySegment } from "../types/progression";
 import { generateChordName } from "../utils/chordUtils";
 
 interface Props {
-  modelValue: boolean;
   harmony: HarmonySegment | null;
 }
 
 interface Emits {
-  (e: "update:modelValue", value: boolean): void;
   (e: "update-harmony", harmony: HarmonySegment): void;
   (e: "delete-harmony", harmonyId: string): void;
   (e: "close"): void;
@@ -258,7 +229,6 @@ const emit = defineEmits<Emits>();
 // 使用 store
 const store = usePlayerStore();
 
-const visible = ref(props.modelValue);
 const saving = ref(false);
 const formRef = ref();
 
@@ -285,25 +255,6 @@ const formRules = {
     { required: true, message: "请选择根音级数", trigger: "change" },
   ],
   chordType: [{ required: true, message: "请选择和弦类型", trigger: "change" }],
-  startBeat: [
-    { required: true, message: "请输入起始拍", trigger: "blur" },
-    {
-      type: "number" as const,
-      min: 0,
-      message: "起始拍不能小于0",
-      trigger: "blur",
-    },
-  ],
-  duration: [
-    { required: true, message: "请输入持续拍数", trigger: "blur" },
-    {
-      type: "number" as const,
-      min: 0.25,
-      max: 16,
-      message: "持续拍数应在0.25-16之间",
-      trigger: "blur",
-    },
-  ],
 };
 
 // 预定义颜色
@@ -358,11 +309,6 @@ const displayChord = computed(() => {
     chord += editingHarmony.suspensionType;
   }
 
-  // 添加低音
-  if (editingHarmony.bassNote) {
-    chord += `/${editingHarmony.bassNote}`;
-  }
-
   // 添加扩展音 - 以上标形式显示
   if (editingHarmony.extensions && editingHarmony.extensions.length > 0) {
     const extensionsStr = editingHarmony.extensions.join(",");
@@ -374,111 +320,11 @@ const displayChord = computed(() => {
     chord += `(omit${editingHarmony.omissions.join(",")})`;
   }
 
-  // 添加罗马数字标记
-  if (editingHarmony.roman) {
-    chord += ` [${editingHarmony.roman}]`;
-  }
-
-  return chord;
-});
-
-// 预览和弦名称（基于原始数据，不实时更新）
-const previewChordDegree = computed(() => {
-  if (!props.harmony) return "I";
-
-  // 获取当前片段的调性信息
-  const currentSegment = store.selectedSegment;
-  const segmentKey = currentSegment?.key || "C";
-
-  // 显示级数和升降号
-  let display = "";
-  if (props.harmony.accidental) {
-    display += props.harmony.accidental;
-  }
-  display += props.harmony.rootDegree || "I";
-
-  // 显示和弦性质
-  const chordTypeDisplay: Record<string, string> = {
-    major: "",
-    minor: "m",
-    augmented: "aug",
-    dominant7: "7",
-    major7: "Maj7",
-    minor7: "m7",
-    half_diminished7: "m7♭5",
-    diminished7: "dim7",
-  };
-  display += chordTypeDisplay[props.harmony.chordType] || "";
-
-  // 显示挂留类型
-  if (props.harmony.suspensionType) {
-    display += props.harmony.suspensionType;
-  }
-
-  // 显示扩展音 - 以上标形式显示
-  if (props.harmony.extensions && props.harmony.extensions.length > 0) {
-    const extensionsStr = props.harmony.extensions.join(",");
-    display += `<sup>${extensionsStr}</sup>`;
-  }
-
-  // 显示省略音 - 新格式
-  if (props.harmony.omissions && props.harmony.omissions.length > 0) {
-    display += `(omit${props.harmony.omissions.join(",")})`;
-  }
-
-  // 显示转位低音
-  if (props.harmony.bassDegree) {
-    let bassDisplay = "";
-    if (props.harmony.bassAccidental) {
-      bassDisplay += props.harmony.bassAccidental;
-    }
-    bassDisplay += props.harmony.bassDegree;
-    display += `/${bassDisplay}`;
-  }
-
-  return display;
-});
-
-// 预览具体音名和弦（基于原始数据，不实时更新）
-const previewChordName = computed(() => {
-  if (!props.harmony) return "C";
-
-  // 获取当前片段的调性信息
-  const currentSegment = store.selectedSegment;
-  const segmentKey = currentSegment?.key || "C";
-
-  // 基于根音级数、升降号和和弦类型生成基础和弦名称
-  let chord =
-    generateChordName(
-      props.harmony.rootDegree,
-      props.harmony.accidental,
-      props.harmony.chordType,
-      segmentKey
-    ) ||
-    props.harmony.chord ||
-    "C";
-
-  // 添加挂留类型
-  if (props.harmony.suspensionType) {
-    chord += props.harmony.suspensionType;
-  }
-
-  // 添加扩展音 - 以上标形式显示
-  if (props.harmony.extensions && props.harmony.extensions.length > 0) {
-    const extensionsStr = props.harmony.extensions.join(",");
-    chord += `<sup>${extensionsStr}</sup>`;
-  }
-
-  // 添加省略音 - 新格式
-  if (props.harmony.omissions && props.harmony.omissions.length > 0) {
-    chord += `(omit${props.harmony.omissions.join(",")})`;
-  }
-
-  // 添加低音级数（转位低音）
-  if (props.harmony.bassDegree) {
+  // 添加转位低音
+  if (editingHarmony.bassDegree) {
     const bassNote = generateChordName(
-      props.harmony.bassDegree,
-      props.harmony.bassAccidental,
+      editingHarmony.bassDegree,
+      editingHarmony.bassAccidental,
       "major",
       segmentKey
     );
@@ -486,22 +332,6 @@ const previewChordName = computed(() => {
   }
 
   return chord;
-});
-
-// 监听 modelValue 变化
-watch(
-  () => props.modelValue,
-  (newVal) => {
-    visible.value = newVal;
-  }
-);
-
-// 监听 visible 变化
-watch(visible, (newVal) => {
-  emit("update:modelValue", newVal);
-  if (!newVal) {
-    emit("close");
-  }
 });
 
 // 监听 harmony 变化
@@ -515,10 +345,10 @@ watch(
         accidental: newHarmony.accidental || "",
         chordType: newHarmony.chordType || "major",
         suspensionType: newHarmony.suspensionType || "",
-        bassNote: newHarmony.bassNote || undefined,
+        bassDegree: newHarmony.bassDegree || undefined,
+        bassAccidental: newHarmony.bassAccidental || "",
         extensions: newHarmony.extensions || [],
         omissions: newHarmony.omissions || [],
-        roman: newHarmony.roman || undefined,
         color: newHarmony.color || "#409EFF",
       });
     }
@@ -529,7 +359,26 @@ watch(
 // 更新和声数据
 const updateHarmony = () => {
   if (props.harmony) {
-    emit("update-harmony", { ...editingHarmony });
+    // 获取当前片段的调性信息
+    const currentSegment = store.selectedSegment;
+    const segmentKey = currentSegment?.key || "C";
+
+    // 生成和弦名称
+    const chordName = generateChordName(
+      editingHarmony.rootDegree,
+      editingHarmony.accidental,
+      editingHarmony.chordType,
+      segmentKey
+    );
+
+    // 创建更新的和声数据
+    const updatedHarmony = {
+      ...editingHarmony,
+      chord: chordName,
+    };
+
+    // 发出事件更新和声
+    emit("update-harmony", updatedHarmony);
   }
 };
 
@@ -558,8 +407,8 @@ const saveHarmony = async () => {
       accidental: editingHarmony.accidental || "",
       chordType: editingHarmony.chordType || "major",
       suspensionType: editingHarmony.suspensionType || "",
-      bassNote: editingHarmony.bassNote?.trim() || undefined,
-      roman: editingHarmony.roman?.trim() || undefined,
+      bassDegree: editingHarmony.bassDegree || undefined,
+      bassAccidental: editingHarmony.bassAccidental || "",
       extensions:
         editingHarmony.extensions?.filter((ext) => ext.trim().length > 0) || [],
       omissions:
@@ -606,38 +455,99 @@ const deleteHarmony = async () => {
 
 // 关闭面板
 const handleClose = () => {
-  visible.value = false;
+  emit("close");
 };
 </script>
 
 <style scoped>
-.harmony-drawer {
-  --el-drawer-padding-primary: 20px;
-}
-
-.edit-form {
-  padding: 0 4px;
+.harmony-panel {
   height: 100%;
   display: flex;
   flex-direction: column;
+  background: #fff;
+  border-left: 1px solid #e4e7ed;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e4e7ed;
+  background: #f8f9fa;
+}
+
+.panel-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 200px;
+  margin-left: auto;
+  margin-right: 12px;
+}
+
+.header-actions .el-button {
+  margin: 0;
+}
+
+.close-btn {
+  color: #909399;
+}
+
+.close-btn:hover {
+  color: #f56c6c;
+}
+
+.inline-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.degree-select {
+  flex: 1;
+  min-width: 120px;
+}
+
+.accidental-group {
+  flex-shrink: 0;
+}
+
+.edit-form {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
 }
 
 .form-section {
   margin-bottom: 24px;
   padding: 16px;
-  background: #f8f9fa;
+  background: #f9fafb;
   border-radius: 8px;
-  border-left: 4px solid #409eff;
+  border-left: 3px solid #409eff;
+  border: 1px solid #e5e7eb;
+}
+
+.form-section:last-child {
+  margin-bottom: 0;
 }
 
 .section-title {
   margin: 0 0 16px 0;
   font-size: 14px;
-  font-weight: 600;
-  color: #303133;
+  font-weight: 700;
+  color: #1f2937;
   display: flex;
   align-items: center;
   gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .section-title::before {
@@ -648,76 +558,27 @@ const handleClose = () => {
   border-radius: 50%;
 }
 
-.preview-section {
-  margin-bottom: 24px;
-  padding: 16px;
-  background: #f0f2f5;
-  border-radius: 8px;
-}
-
-.harmony-preview {
-  padding: 16px;
+.chord-preview {
+  background: #f8f9fa;
+  border: 1px solid #e4e7ed;
   border-radius: 6px;
-  color: white;
+  padding: 12px;
   text-align: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  min-height: 80px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 8px;
-}
-
-.preview-chord-degree {
-  font-size: 20px;
-  font-weight: 700;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-  font-family: "Times New Roman", serif;
-  /* 支持上标显示 */
-  position: relative;
-  opacity: 0.95;
-}
-
-.preview-chord-degree sup {
-  font-size: 12px;
-  vertical-align: super;
-  line-height: 0;
-}
-
-.preview-chord-name {
   font-size: 18px;
   font-weight: 600;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-  font-family: "Times New Roman", serif;
-  /* 支持上标显示 */
-  position: relative;
-  opacity: 0.9;
+  color: #303133;
+  margin-bottom: 16px;
 }
 
-.preview-chord-name sup {
-  font-size: 11px;
-  vertical-align: super;
-  line-height: 0;
-}
-
-.preview-info {
-  font-size: 12px;
-  opacity: 0.9;
-}
-
-.preview-type {
-  font-size: 11px;
-  opacity: 0.8;
-  font-style: italic;
-}
-
-.form-actions {
-  margin-top: auto;
-  padding-top: 20px;
+.bass-controls {
   display: flex;
   gap: 12px;
-  justify-content: flex-end;
-  border-top: 1px solid #e4e7ed;
+  align-items: flex-end;
+}
+
+.bass-controls .el-form-item {
+  flex: 1;
+  margin-bottom: 0;
 }
 
 /* Element Plus 组件样式覆盖 */
@@ -765,6 +626,9 @@ const handleClose = () => {
   border-radius: 6px;
   width: 60px;
   height: 36px;
+  display: flex;
+  align-items: center;
+  height: 100%;
 }
 
 :deep(.el-button) {
@@ -774,6 +638,17 @@ const handleClose = () => {
 
 :deep(.el-form-item) {
   margin-bottom: 16px;
+}
+
+:deep(.el-form-item__label) {
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  line-height: 1.4;
+}
+
+:deep(.el-form-item__content) {
+  font-size: 13px;
 }
 
 :deep(.el-form-item:last-child) {

@@ -122,15 +122,6 @@
         </el-button>
       </template>
     </el-dialog>
-
-    <!-- 和声编辑侧边栏 -->
-    <SidePanel
-      v-model="showSidePanel"
-      :harmony="editingHarmony"
-      @update-harmony="handleUpdateHarmony"
-      @delete-harmony="handleDeleteHarmony"
-      @close="closeSidePanel"
-    />
   </div>
 </template>
 
@@ -141,7 +132,6 @@ import { ArrowRight, Edit, CopyDocument, Delete } from '@element-plus/icons-vue'
 import type { ProjectSegment, HarmonySegment } from '../types/progression'
 import { usePlayerStore } from '../stores/player'
 import HarmonyEditor from './HarmonyEditor.vue'
-import SidePanel from './SidePanel.vue'
 
 interface Props {
   segment: ProjectSegment
@@ -152,6 +142,7 @@ interface Emits {
   (e: 'update-segment', segment: ProjectSegment): void
   (e: 'duplicate-segment', index: number): void
   (e: 'delete-segment', index: number): void
+  (e: 'edit-harmony', harmony: HarmonySegment): void
 }
 
 const props = defineProps<Props>()
@@ -192,10 +183,6 @@ const formRules = {
     { required: true, message: '请选择调式', trigger: 'change' }
   ]
 }
-
-// 侧边栏状态
-const showSidePanel = ref(false)
-const editingHarmony = ref<HarmonySegment | null>(null)
 
 // 片段操作方法
 const toggleExpanded = () => {
@@ -341,29 +328,7 @@ const handleUpdateSegment = (updatedSegment: ProjectSegment) => {
 
 const handleEditHarmony = (harmony: HarmonySegment) => {
   console.log('编辑和声:', harmony.id)
-  editingHarmony.value = harmony
-  showSidePanel.value = true
-}
-
-// SidePanel 事件处理
-const handleUpdateHarmony = (updatedHarmony: HarmonySegment) => {
-  console.log('更新和声:', updatedHarmony.id)
-  store.updateHarmony(updatedHarmony.id, updatedHarmony)
-  
-  // 更新本地编辑状态
-  editingHarmony.value = updatedHarmony
-}
-
-const handleDeleteHarmony = (harmonyId: string) => {
-  console.log('删除和声:', harmonyId)
-  store.removeHarmony(harmonyId)
-  closeSidePanel()
-}
-
-const closeSidePanel = () => {
-  showSidePanel.value = false
-  editingHarmony.value = null
-  store.selectHarmony(null) // 清除选中状态
+  emit('edit-harmony', harmony)
 }
 
 // 清除拍号设置，使用全局拍号

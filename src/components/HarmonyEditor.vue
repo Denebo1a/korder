@@ -68,6 +68,7 @@
                     dragging: isDragging && draggedHarmonyId === harmony.id,
                     resizing: isResizing && resizedHarmonyId === harmony.id,
                     'drag-invalid': isDragging && draggedHarmonyId === harmony.id && dragPreviewPosition && !dragPreviewPosition.isValid,
+                    editing: store.selectedHarmonyId === harmony.id,
                   }"
                   :style="
                     getHarmonyStyle(harmony, (rowIndex - 1) * 4 + colIndex - 1)
@@ -1091,6 +1092,22 @@ const formatDuration = (duration: number) => {
   transform: translateY(-4px);
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
   animation: float 0.6s ease-in-out infinite alternate;
+}
+
+.harmony-segment.editing {
+  border: 3px solid #409eff !important;
+  box-shadow: 0 0 12px rgba(64, 158, 255, 0.4) !important;
+  transform: translateY(-1px);
+  animation: pulse-editing 2s ease-in-out infinite;
+}
+
+@keyframes pulse-editing {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(64, 158, 255, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(64, 158, 255, 0.6);
+  }
 }
 
 .harmony-segment.drag-invalid {

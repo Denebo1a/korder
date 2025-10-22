@@ -188,23 +188,103 @@ interface PlayerState {
 - 量化对齐: 根据全局量化设置对齐
 - 实时预览: 显示拖拽过程中的位置
 
+**视觉状态 (最新)**:
+- **编辑状态高亮**: 通过 `editing` CSS 类为正在编辑的和声块添加蓝色边框和脉冲动画
+- **状态绑定**: 使用 `store.selectedHarmonyId === harmony.id` 判断编辑状态
+- **动画效果**: `pulse-editing` 关键帧动画提供视觉反馈
+
 ### SidePanel.vue (侧边栏编辑器)
 **Props**:
-- `modelValue: boolean` - 显示状态
 - `harmony: HarmonySegment | null` - 要编辑的和声
 
 **Emits**:
-- `update:modelValue` - 更新显示状态
 - `update-harmony` - 更新和声数据
 - `delete-harmony` - 删除和声
 - `close` - 关闭面板
 
 **主要功能**:
 - 和声属性详细编辑
-- 和弦类型选择
-- 扩展音和省略音设置
-- 颜色自定义
-- 实时预览
+- 根音级数和升降号设置
+- 和弦类型选择 (大三、小三、属七、大七、小七、半减七、减七、增三)
+- 挂留类型设置 (sus2, sus4)
+- 转位低音设置
+- 扩展音和省略音配置
+- 颜色自定义（顶部操作区）
+- 实时预览和弦信息
+
+**布局变更 (2024年最新)**:
+- **从抽屉式设计改为常驻侧边栏**: SidePanel 不再使用 `el-drawer` 组件，改为固定在应用右侧的常驻面板
+- **移除 v-model 绑定**: 不再通过 `visible` 属性控制显示/隐藏，而是通过条件渲染 (`v-if="selectedHarmony"`)
+- **简化事件处理**: 移除了 `visible` 相关的响应式逻辑，简化了组件状态管理
+- **移除预览区域**: 删除了和弦预览功能相关的 HTML、计算属性和样式，专注于编辑功能
+- **优化样式结构**: 重新设计了面板样式，适配常驻布局的视觉需求
+
+**界面优化 (最新)**:
+- **紧凑布局设计**: 采用更紧凑的间距和尺寸，提高空间利用率
+- **顶部操作区**: 将颜色选择器和删除按钮移至标题区域，删除按钮改为仅显示图标的圆形按钮
+- **移除保存按钮**: 实现实时保存，无需手动保存操作
+- **小尺寸控件**: 所有表单控件使用 `size="small"` 属性，节省空间
+- **优化分组**: 减少各区块间距，使界面更加紧凑
+- **视觉层级优化**: 
+  - 设置板块标题增加分隔线和圆点标识，字体加粗
+  - 表单区块增加背景色和边框，提升视觉层次
+  - 优化字体大小和颜色，提高可读性
+  - 内联控件布局：根音级数和低音级数与对应升降号单选组置于同一行
+
+**功能修复 (最新)**:
+- **编辑状态高亮**: 正在编辑的和声块现在有明显的蓝色边框和脉冲动画效果，通过 `store.selectedHarmonyId` 状态控制
+- **实时同步优化**: 修复了侧边栏修改无法实时同步到和声块的问题，现在所有属性变更都能立即反映在界面上
+- **事件流优化**: 改进了 `updateHarmony` 方法的实现，确保数据更新的一致性和实时性
+
+## 应用布局架构
+
+### 整体布局结构
+```
+App.vue
+├── Header (工具栏)
+│   ├── 播放控制 (播放/暂停/停止/跳转开始)
+│   ├── BPM 设置
+│   ├── 量化级别选择
+│   ├── 项目管理 (新建/保存/加载)
+│   ├── 音频导入
+│   ├── 初始强拍设置
+│   └── 波形显示开关
+├── Main Content (主内容区)
+│   ├── 波形显示区域 (可选)
+│   └── Timeline 组件
+│       └── SegmentEditor 组件列表
+│           └── HarmonyEditor 组件
+└── Sidebar (右侧常驻侧边栏)
+    └── SidePanel 组件 (条件渲染)
+```
+
+### 事件流架构
+```
+HarmonyEditor → SegmentEditor → Timeline → App → SidePanel
+     ↓              ↓            ↓        ↓        ↓
+edit-harmony → edit-harmony → edit-harmony → onEditHarmony → 显示编辑面板
+```
+
+## 服务层架构
+
+### transport.ts (音频传输控制)
+**功能**: 基于 Tone.js 的音频播放和同步控制
+**主要方法**:
+- `startTransport()` - 开始播放
+- `pauseTransport()` - 暂停播放  
+- `stopTransport()` - 停止播放
+- `seekTransportSeconds()` - 跳转到指定时间
+- `setBpm()` - 设置 BPM
+
+### wave.ts (波形处理)
+**功能**: 基于 WaveSurfer.js 的音频波形显示和交互
+**主要方法**:
+- `createWaveSurfer()` - 创建波形实例
+- `loadAudioBlob()` - 加载音频文件
+- `playAudio()` / `pauseAudio()` / `stopAudio()` - 音频控制
+- `seekSeconds()` - 跳转到指定时间
+- `getDuration()` - 获取音频时长
+- 事件回调: `onReady()`, `onPlay()`, `onPause()`, `onAudioProcess()`, `onClick()`
 
 ## 状态管理 (Pinia Store)
 
@@ -387,6 +467,11 @@ const quantizedBeat = Math.round(beat / quantizeStep) * quantizeStep;
    - 基于行高计算垂直位移对应的拍数偏移
    - 与水平拖拽结合实现二维移动
    - 自动量化对齐到指定细分
+
+3. **侧边栏编辑器优化** ⭐ **最新更新**
+   - **预览同步修复**: 解决预览和声块文本与片段实际文本不同步问题，确保预览使用正确的片段调性
+   - **界面简化**: 移除时间设置表单项，现在通过直观的拖拽操作调整时间
+   - **数据结构统一**: 使用标准的 `bassDegree`/`bassAccidental` 属性处理转位低音
 
 ### 重叠防护机制详细实现
 

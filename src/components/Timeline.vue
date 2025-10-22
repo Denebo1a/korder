@@ -38,6 +38,7 @@
           @update-segment="updateSegment"
           @duplicate-segment="duplicateSegment"
           @delete-segment="deleteSegment"
+          @edit-harmony="$emit('edit-harmony', $event)"
         />
       </div>
     </div>
@@ -49,8 +50,13 @@ import { computed } from 'vue'
 import { ElButton, ElButtonGroup, ElDivider, ElEmpty, ElMessage } from 'element-plus'
 import { Plus, Expand, Fold } from '@element-plus/icons-vue'
 import SegmentEditor from './SegmentEditor.vue'
-import type { ProjectSegment } from '../types/progression'
+import type { ProjectSegment, HarmonySegment } from '../types/progression'
 import { usePlayerStore } from '../stores/player'
+
+// 定义事件
+defineEmits<{
+  (e: 'edit-harmony', harmony: HarmonySegment): void
+}>()
 
 const store = usePlayerStore()
 

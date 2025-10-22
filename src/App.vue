@@ -86,49 +86,69 @@
     </el-header>
 
     <!-- 主内容区 -->
-    <el-main class="app-main">
-      <!-- 波形显示区域 -->
-      <el-card v-if="store.showWaveform" class="waveform-card" shadow="never">
-        <div class="waveform-container">
-          <div ref="waveformRef" class="waveform"></div>
-          <!-- 初始强拍游标 -->
-          <div 
-            v-if="store.hasAudio"
-            class="beat-offset-cursor"
-            :style="beatOffsetCursorStyle"
-            @mousedown="startDragCursor"
-            title="初始强拍位置 - 拖动调整"
-          >
-            <div class="cursor-line"></div>
-            <div class="cursor-handle">♪</div>
-          </div>
-        </div>
-        <div v-if="!store.hasAudio" class="waveform-placeholder">
-          <el-empty description="请导入音频文件以显示波形" :image-size="60" />
-        </div>
-      </el-card>
-
-      <!-- 时间轴区域 -->
-      <el-card class="timeline-card" shadow="never">
-        <template #header>
-          <div class="timeline-header">
-            <span>和声进行</span>
-            <div class="time-info">
-              <el-tag size="small" type="info">
-                {{ formatTime(store.currentSec) }} / {{ formatTime(store.audioDuration) }}
-              </el-tag>
-              <el-tag size="small" type="success">
-                拍: {{ store.adjustedCurrentBeat.toFixed(1) }}
-              </el-tag>
+    <div class="app-content">
+      <!-- 左侧主内容区域 -->
+      <el-main class="app-main">
+        <!-- 波形显示区域 -->
+        <el-card v-if="store.showWaveform" class="waveform-card" shadow="never">
+          <div class="waveform-container">
+            <div ref="waveformRef" class="waveform"></div>
+            <!-- 初始强拍游标 -->
+            <div 
+              v-if="store.hasAudio"
+              class="beat-offset-cursor"
+              :style="beatOffsetCursorStyle"
+              @mousedown="startDragCursor"
+              title="初始强拍位置 - 拖动调整"
+            >
+              <div class="cursor-line"></div>
+              <div class="cursor-handle">♪</div>
             </div>
           </div>
-        </template>
-        
-        <Timeline />
-      </el-card>
-    </el-main>
+          <div v-if="!store.hasAudio" class="waveform-placeholder">
+            <el-empty description="请导入音频文件以显示波形" :image-size="60" />
+          </div>
+        </el-card>
 
-    <!-- 移除侧边编辑面板，现在使用内嵌的片段编辑器 -->
+        <!-- 时间轴区域 -->
+        <el-card class="timeline-card" shadow="never">
+          <template #header>
+            <div class="timeline-header">
+              <span>和声进行</span>
+              <div class="time-info">
+                <el-tag size="small" type="info">
+                  {{ formatTime(store.currentSec) }} / {{ formatTime(store.audioDuration) }}
+                </el-tag>
+                <el-tag size="small" type="success">
+                  拍: {{ store.adjustedCurrentBeat.toFixed(1) }}
+                </el-tag>
+              </div>
+            </div>
+          </template>
+          
+          <Timeline @edit-harmony="onEditHarmony" />
+        </el-card>
+      </el-main>
+
+      <!-- 右侧常驻侧边栏区域 -->
+      <aside class="app-sidebar">
+        <div class="sidebar-content">
+          <SidePanel 
+            v-if="selectedHarmony"
+            :harmony="selectedHarmony"
+            @update-harmony="onUpdateHarmony"
+            @delete-harmony="onDeleteHarmony"
+            @close="onCloseSidePanel"
+          />
+          <div v-else class="sidebar-placeholder">
+            <el-empty 
+              description="双击和声块进行编辑"
+              :image-size="80"
+            />
+          </div>
+        </div>
+      </aside>
+    </div>
 
     <!-- 隐藏的文件输入 -->
     <input 
@@ -195,8 +215,9 @@ import {
 } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import Timeline from './components/Timeline.vue';
+import SidePanel from './components/SidePanel.vue';
 import { usePlayerStore } from './stores/player';
-import type { ProgressionFile } from './types/progression';
+import type { ProgressionFile, HarmonySegment } from './types/progression';
 import * as transport from './services/transport';
 import * as wave from './services/wave';
 
@@ -214,6 +235,9 @@ const timeInputString = ref('0:00.000');
 
 // 游标拖拽状态
 const isDraggingCursor = ref(false);
+
+// 侧边栏状态
+const selectedHarmony = ref<HarmonySegment | null>(null);
 
 // 音调选项
 const keys = ['C', 'C#', 'Db', 'D', 'D#', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'G#', 'Ab', 'A', 'A#', 'Bb', 'B'];
@@ -402,7 +426,7 @@ const parseTimeString = (timeStr: string): number => {
   if (!match) return 0;
   
   const [, mins, secs, ms] = match;
-  return parseInt(mins) * 60 + parseInt(secs) + parseInt(ms) / 1000;
+  return parseInt(mins!) * 60 + parseInt(secs!) + parseInt(ms!) / 1000;
 };
 
 // 设定初始强拍相关函数
@@ -447,6 +471,27 @@ const beatOffsetCursorStyle = computed(() => {
     left: `${Math.max(0, Math.min(position, 100))}%`
   };
 });
+
+// 侧边栏事件处理
+const onEditHarmony = (harmony: HarmonySegment) => {
+  selectedHarmony.value = harmony;
+  store.selectHarmony(harmony.id); // 同步选中状态到 store
+};
+
+const onUpdateHarmony = (updatedHarmony: HarmonySegment) => {
+  store.updateHarmony(updatedHarmony.id, updatedHarmony);
+};
+
+const onDeleteHarmony = (harmonyId: string) => {
+  store.removeHarmony(harmonyId);
+  selectedHarmony.value = null;
+  store.selectHarmony(null); // 清除选中状态
+};
+
+const onCloseSidePanel = () => {
+  selectedHarmony.value = null;
+  store.selectHarmony(null); // 清除选中状态
+};
 
 // 游标拖拽功能
 const startDragCursor = (event: MouseEvent) => {
@@ -498,6 +543,44 @@ const startDragCursor = (event: MouseEvent) => {
   z-index: 100;
 }
 
+.app-content {
+  flex: 1;
+  display: flex;
+  height: 0; /* 确保 flex 子元素正确计算高度 */
+}
+
+.app-main {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: 100%;
+}
+
+.app-sidebar {
+  width: 450px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--el-border-color-light);
+  background: var(--el-bg-color);
+  height: 100%;
+  overflow: hidden;
+}
+
+.sidebar-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-placeholder {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: var(--el-text-color-placeholder);
+}
+
 .header-left {
   display: flex;
   align-items: center;
@@ -534,20 +617,9 @@ const startDragCursor = (event: MouseEvent) => {
   white-space: nowrap;
 }
 
-.app-main {
-  flex: 1;
-  padding: 20px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  height: 0;
-}
-
 .waveform-card {
   margin-bottom: 20px;
   width: 100%;
-  max-width: 1200px;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .waveform-container {
@@ -610,9 +682,6 @@ const startDragCursor = (event: MouseEvent) => {
 .timeline-card {
   margin-bottom: 20px;
   width: 100%;
-  max-width: 1200px;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .timeline-header {
@@ -656,6 +725,12 @@ const startDragCursor = (event: MouseEvent) => {
 }
 
 /* 响应式设计 */
+@media (max-width: 1200px) {
+  .app-sidebar {
+    width: 350px;
+  }
+}
+
 @media (max-width: 768px) {
   .app-header {
     flex-direction: column;
@@ -667,6 +742,17 @@ const startDragCursor = (event: MouseEvent) => {
   .header-right {
     flex-wrap: wrap;
     justify-content: center;
+  }
+  
+  .app-content {
+    flex-direction: column;
+  }
+  
+  .app-sidebar {
+    width: 100%;
+    height: 300px;
+    border-left: none;
+    border-top: 1px solid var(--el-border-color-light);
   }
   
   .app-main {
