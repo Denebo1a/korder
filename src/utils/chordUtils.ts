@@ -51,7 +51,7 @@ export const accidentalDisplay: Record<string, string> = {
  * @param noteName 音名（如 'C♯', 'D♭', 'F##'）
  * @returns {baseName: string, accidentalCount: number} 基础音名和升降号数量（正数为升号，负数为降号）
  */
-const parseNoteName = (noteName: string): { baseName: string; accidentalCount: number } => {
+export const parseNoteName = (noteName: string): { baseName: string; accidentalCount: number } => {
   const baseName = noteName.charAt(0)
   const accidentalPart = noteName.slice(1)
   
@@ -68,6 +68,8 @@ const parseNoteName = (noteName: string): { baseName: string; accidentalCount: n
   
   return { baseName, accidentalCount }
 }
+
+
 
 /**
  * 根据基础音名和升降号数量构建音名

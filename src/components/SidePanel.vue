@@ -225,6 +225,7 @@ import { ElDrawer, ElForm, ElFormItem, ElInput, ElInputNumber, ElSelect, ElOptio
 import { Delete } from '@element-plus/icons-vue'
 import { usePlayerStore } from '../stores/player'
 import type { HarmonySegment } from '../types/progression'
+import { generateChordName } from '../utils/chordUtils'
 
 interface Props {
   modelValue: boolean
@@ -299,70 +300,7 @@ const predefineColors = [
   '#795548'  // 棕色
 ]
 
-// 根据根音级数、升降号和和弦类型生成和弦名称（基于片段调性）
-const generateChordName = (rootDegree?: string, accidental?: string, chordType?: string, segmentKey?: string) => {
-  if (!rootDegree || !chordType || !segmentKey) return 'C'
-  
-  // 各调的音阶映射
-  const keyScales: Record<string, string[]> = {
-    'C': ['C', 'D', 'E', 'F', 'G', 'A', 'B'],
-    'C#': ['C#', 'D#', 'E#', 'F#', 'G#', 'A#', 'B#'],
-    'Db': ['Db', 'Eb', 'F', 'Gb', 'Ab', 'Bb', 'C'],
-    'D': ['D', 'E', 'F#', 'G', 'A', 'B', 'C#'],
-    'D#': ['D#', 'E#', 'F##', 'G#', 'A#', 'B#', 'C##'],
-    'Eb': ['Eb', 'F', 'G', 'Ab', 'Bb', 'C', 'D'],
-    'E': ['E', 'F#', 'G#', 'A', 'B', 'C#', 'D#'],
-    'F': ['F', 'G', 'A', 'Bb', 'C', 'D', 'E'],
-    'F#': ['F#', 'G#', 'A#', 'B', 'C#', 'D#', 'E#'],
-    'Gb': ['Gb', 'Ab', 'Bb', 'Cb', 'Db', 'Eb', 'F'],
-    'G': ['G', 'A', 'B', 'C', 'D', 'E', 'F#'],
-    'G#': ['G#', 'A#', 'B#', 'C#', 'D#', 'E#', 'F##'],
-    'Ab': ['Ab', 'Bb', 'C', 'Db', 'Eb', 'F', 'G'],
-    'A': ['A', 'B', 'C#', 'D', 'E', 'F#', 'G#'],
-    'A#': ['A#', 'B#', 'C##', 'D#', 'E#', 'F##', 'G##'],
-    'Bb': ['Bb', 'C', 'D', 'Eb', 'F', 'G', 'A'],
-    'B': ['B', 'C#', 'D#', 'E', 'F#', 'G#', 'A#']
-  }
-  
-  // 级数到索引的映射
-  const degreeToIndex: Record<string, number> = {
-    'I': 0, 'II': 1, 'III': 2, 'IV': 3, 'V': 4, 'VI': 5, 'VII': 6
-  }
-  
-  // 和弦类型到后缀的映射
-  const chordTypeSuffix: Record<string, string> = {
-    'major': '',
-    'minor': 'm',
-    'augmented': 'aug',
-    'dominant7': '7',
-    'major7': 'Maj7',
-    'minor7': 'm7',
-    'half_diminished7': 'm7♭5',
-    'diminished7': 'dim7'
-  }
-  
-  const scale = keyScales[segmentKey] || keyScales['C']
-  const degreeIndex = degreeToIndex[rootDegree] || 0
-  let rootNote = scale[degreeIndex] || 'C'
-  
-  // 应用升降号 - 使用Unicode音乐符号
-  if (accidental === '#') {
-    // 使用Unicode升号符号 ♯ (U+266F)
-    const sharpMap: Record<string, string> = {
-      'C': 'C♯', 'D': 'D♯', 'E': 'F', 'F': 'F♯', 'G': 'G♯', 'A': 'A♯', 'B': 'C'
-    }
-    rootNote = sharpMap[rootNote.charAt(0)] + rootNote.slice(1).replace(/[#b♯♭]/g, '') || rootNote
-  } else if (accidental === 'b') {
-    // 使用Unicode降号符号 ♭ (U+266D)
-    const flatMap: Record<string, string> = {
-      'C': 'B', 'D': 'D♭', 'E': 'E♭', 'F': 'E', 'G': 'G♭', 'A': 'A♭', 'B': 'B♭'
-    }
-    rootNote = flatMap[rootNote.charAt(0)] + rootNote.slice(1).replace(/[#b♯♭]/g, '') || rootNote
-  }
-  
-  const suffix = chordTypeSuffix[chordType] || ''
-  return rootNote + suffix
-}
+// 使用 utils 中的 generateChordName（通过顶部引入）
 
 // 获取和弦类型标签
 const getChordTypeLabel = (chordType: string) => {

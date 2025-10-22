@@ -1,0 +1,11 @@
+[33mcommit 0d0bd602735da80da111adc8c95113921b966181[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: Denebo1a <3395882338@qq.com>
+Date:   Wed Oct 22 10:20:05 2025 +0800
+
+    量化、和声块拖拽编辑
+
+[33mcommit 3691d3a996cf555c1bdac306e9c21d67cdbacab6[m
+Author: Denebo1a <3395882338@qq.com>
+Date:   Tue Oct 21 00:57:16 2025 +0800
+
+    Initial commit

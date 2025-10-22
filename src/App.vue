@@ -79,9 +79,9 @@
         <div class="setting-item">
           <span class="setting-label">量化:</span>
           <el-select v-model="store.quantization" size="small" style="width: 100px">
-            <el-option value="quarter" label="四分音符" />
-            <el-option value="eighth" label="八分音符" />
-            <el-option value="sixteenth" label="十六分音符" />
+            <el-option value="quarter" label="1拍" />
+            <el-option value="eighth" label="1/2拍" />
+            <el-option value="sixteenth" label="1/4拍" />
           </el-select>
         </div>
         

@@ -88,9 +88,10 @@
                     ></div>
                   </span>
 
-                  <!-- 右边缘拖拽手柄 -->
+                  <!-- 右边缘拖拽手柄：仅在和声真实结束所在小节显示 -->
                   <div
                     class="resize-handle"
+                    v-if="shouldShowResizeHandle(harmony, (rowIndex - 1) * 4 + colIndex - 1)"
                     @mousedown.stop="startResize($event, harmony)"
                     title="拖拽调整持续时间"
                   >
@@ -142,6 +143,7 @@ import { ElRadioGroup, ElRadioButton, ElIcon } from "element-plus";
 import { Plus } from "@element-plus/icons-vue";
 import { usePlayerStore } from "../stores/player";
 import type { ProjectSegment, HarmonySegment } from "../types/progression";
+import { generateChordName } from "../utils/chordUtils";
 
 interface Props {
   segment: ProjectSegment;
@@ -410,97 +412,7 @@ const getHarmonyDisplayText = computed(() => {
   };
 });
 
-// 根据根音级数、升降号和和弦类型生成和弦名称（基于片段调性）
-const generateChordName = (
-  rootDegree?: string,
-  accidental?: string,
-  chordType?: string,
-  segmentKey?: string
-) => {
-  if (!rootDegree || !chordType || !segmentKey) return "";
-
-  // 各调的音阶映射
-  const keyScales: Record<string, string[]> = {
-    C: ["C", "D", "E", "F", "G", "A", "B"],
-    "C#": ["C#", "D#", "E#", "F#", "G#", "A#", "B#"],
-    Db: ["Db", "Eb", "F", "Gb", "Ab", "Bb", "C"],
-    D: ["D", "E", "F#", "G", "A", "B", "C#"],
-    "D#": ["D#", "E#", "F##", "G#", "A#", "B#", "C##"],
-    Eb: ["Eb", "F", "G", "Ab", "Bb", "C", "D"],
-    E: ["E", "F#", "G#", "A", "B", "C#", "D#"],
-    F: ["F", "G", "A", "Bb", "C", "D", "E"],
-    "F#": ["F#", "G#", "A#", "B", "C#", "D#", "E#"],
-    Gb: ["Gb", "Ab", "Bb", "Cb", "Db", "Eb", "F"],
-    G: ["G", "A", "B", "C", "D", "E", "F#"],
-    "G#": ["G#", "A#", "B#", "C#", "D#", "E#", "F##"],
-    Ab: ["Ab", "Bb", "C", "Db", "Eb", "F", "G"],
-    A: ["A", "B", "C#", "D", "E", "F#", "G#"],
-    "A#": ["A#", "B#", "C##", "D#", "E#", "F##", "G##"],
-    Bb: ["Bb", "C", "D", "Eb", "F", "G", "A"],
-    B: ["B", "C#", "D#", "E", "F#", "G#", "A#"],
-  };
-
-  // 级数到索引的映射
-  const degreeToIndex: Record<string, number> = {
-    I: 0,
-    II: 1,
-    III: 2,
-    IV: 3,
-    V: 4,
-    VI: 5,
-    VII: 6,
-  };
-
-  // 和弦类型到后缀的映射
-  const chordTypeSuffix: Record<string, string> = {
-    major: "",
-    minor: "m",
-    augmented: "aug",
-    dominant7: "7",
-    major7: "Maj7",
-    minor7: "m7",
-    half_diminished7: "m7♭5",
-    diminished7: "dim7",
-  };
-
-  const scale = keyScales[segmentKey] || keyScales["C"];
-  const degreeIndex = degreeToIndex[rootDegree] || 0;
-  let rootNote = scale[degreeIndex] || "C";
-
-  // 应用升降号 - 使用Unicode音乐符号
-  if (accidental === "#") {
-    // 使用Unicode升号符号 ♯ (U+266F)
-    const sharpMap: Record<string, string> = {
-      C: "C♯",
-      D: "D♯",
-      E: "F",
-      F: "F♯",
-      G: "G♯",
-      A: "A♯",
-      B: "C",
-    };
-    rootNote =
-      sharpMap[rootNote.charAt(0)] + rootNote.slice(1).replace(/[#b♯♭]/g, "") ||
-      rootNote;
-  } else if (accidental === "b") {
-    // 使用Unicode降号符号 ♭ (U+266D)
-    const flatMap: Record<string, string> = {
-      C: "B",
-      D: "D♭",
-      E: "E♭",
-      F: "E",
-      G: "G♭",
-      A: "A♭",
-      B: "B♭",
-    };
-    rootNote =
-      flatMap[rootNote.charAt(0)] + rootNote.slice(1).replace(/[#b♯♭]/g, "") ||
-      rootNote;
-  }
-
-  const suffix = chordTypeSuffix[chordType] || "";
-  return rootNote + suffix;
-};
+// 使用 utils 中的 generateChordName（已在顶部引入）
 const getPlaybackCursorStyle = (measureIndex: number) => {
   if (currentBeatInSegment.value < 0) return { display: "none" };
 
@@ -547,6 +459,14 @@ const getHarmonyStyle = (harmony: HarmonySegment, measureIndex: number) => {
     width: `${width}%`,
     backgroundColor: harmony.color || "#409EFF",
   };
+};
+
+// 仅在和声真实结束所在的小节显示拖拽手柄
+const shouldShowResizeHandle = (harmony: HarmonySegment, measureIndex: number) => {
+  const measureStart = measureIndex * beatsPerMeasure.value;
+  const measureEnd = (measureIndex + 1) * beatsPerMeasure.value;
+  const harmonyEnd = harmony.startBeat + harmony.duration;
+  return harmonyEnd <= measureEnd && harmonyEnd > measureStart;
 };
 
 // 检查是否可以在指定小节添加和声
@@ -682,9 +602,19 @@ const editHarmony = (harmony: HarmonySegment) => {
 };
 
 // 拖拽和调整大小处理方法
+const dragCandidateHarmonyId = ref<string | null>(null);
+const draggingInitiated = ref(false);
+const DRAG_START_THRESHOLD_PX = 4;
+
 const startDrag = (event: MouseEvent, harmony: HarmonySegment) => {
-  isDragging.value = true;
-  draggedHarmonyId.value = harmony.id;
+  // 双击仅用于编辑，不触发拖拽
+  if (event.detail && event.detail > 1) {
+    return;
+  }
+  isDragging.value = false;
+  draggedHarmonyId.value = null;
+  draggingInitiated.value = false;
+  dragCandidateHarmonyId.value = harmony.id;
   dragStartX.value = event.clientX;
   dragStartBeat.value = harmony.startBeat;
 
@@ -693,21 +623,34 @@ const startDrag = (event: MouseEvent, harmony: HarmonySegment) => {
 };
 
 const handleDrag = (event: MouseEvent) => {
-  if (!isDragging.value || !draggedHarmonyId.value) return;
+  if (!dragCandidateHarmonyId.value) return;
 
   const deltaX = event.clientX - dragStartX.value;
   const deltaBeat = deltaX / store.pxPerBeat;
+
+  // 只有超过阈值后才认为进入拖拽状态，避免轻微抖动及双击触发动画
+  if (!draggingInitiated.value) {
+    if (Math.abs(deltaX) < DRAG_START_THRESHOLD_PX) return;
+    draggingInitiated.value = true;
+    isDragging.value = true;
+    draggedHarmonyId.value = dragCandidateHarmonyId.value;
+  }
+
   const newStartBeat = Math.max(0, dragStartBeat.value + deltaBeat);
 
   // 量化到最近的细分
   const quantizedBeat = quantizeBeat(newStartBeat);
 
-  store.updateHarmony(draggedHarmonyId.value, { startBeat: quantizedBeat });
+  if (draggedHarmonyId.value) {
+    store.updateHarmony(draggedHarmonyId.value, { startBeat: quantizedBeat });
+  }
 };
 
 const endDrag = () => {
   isDragging.value = false;
   draggedHarmonyId.value = null;
+  dragCandidateHarmonyId.value = null;
+  draggingInitiated.value = false;
 
   document.removeEventListener("mousemove", handleDrag);
   document.removeEventListener("mouseup", endDrag);
