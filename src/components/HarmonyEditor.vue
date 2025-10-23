@@ -16,7 +16,9 @@
             class="measure-container"
             :class="{
               'measure-first': colIndex === 1,
-              'measure-last': colIndex === 4 || (rowIndex - 1) * 4 + colIndex === segment.measures,
+              'measure-last':
+                colIndex === 4 ||
+                (rowIndex - 1) * 4 + colIndex === segment.measures,
               'measure-empty': (rowIndex - 1) * 4 + colIndex > segment.measures,
             }"
           >
@@ -29,7 +31,10 @@
             </div>
 
             <!-- 小节内容，仅渲染存在的小节 -->
-            <div v-if="(rowIndex - 1) * 4 + colIndex <= segment.measures" class="measure-content">
+            <div
+              v-if="(rowIndex - 1) * 4 + colIndex <= segment.measures"
+              class="measure-content"
+            >
               <!-- 拍子网格背景 -->
               <div class="beat-grid">
                 <div
@@ -45,7 +50,9 @@
                     ),
                   }"
                 >
-                  <span v-if="subdivision.isBeatStart">{{ subdivision.beatNumber }}</span>
+                  <span v-if="subdivision.isBeatStart">{{
+                    subdivision.beatNumber
+                  }}</span>
                 </div>
               </div>
 
@@ -53,7 +60,9 @@
               <div
                 v-if="isPlayingInMeasure((rowIndex - 1) * 4 + colIndex - 1)"
                 class="playback-cursor"
-                :style="getPlaybackCursorStyle((rowIndex - 1) * 4 + colIndex - 1)"
+                :style="
+                  getPlaybackCursorStyle((rowIndex - 1) * 4 + colIndex - 1)
+                "
               ></div>
 
               <!-- 和声片段 -->
@@ -67,7 +76,11 @@
                   :class="{
                     dragging: isDragging && draggedHarmonyId === harmony.id,
                     resizing: isResizing && resizedHarmonyId === harmony.id,
-                    'drag-invalid': isDragging && draggedHarmonyId === harmony.id && dragPreviewPosition && !dragPreviewPosition.isValid,
+                    'drag-invalid':
+                      isDragging &&
+                      draggedHarmonyId === harmony.id &&
+                      dragPreviewPosition &&
+                      !dragPreviewPosition.isValid,
                     editing: store.selectedHarmonyId === harmony.id,
                   }"
                   :style="
@@ -90,7 +103,12 @@
                   <!-- 右边缘拖拽手柄：仅在和声真实结束所在小节显示 -->
                   <div
                     class="resize-handle"
-                    v-if="shouldShowResizeHandle(harmony, (rowIndex - 1) * 4 + colIndex - 1)"
+                    v-if="
+                      shouldShowResizeHandle(
+                        harmony,
+                        (rowIndex - 1) * 4 + colIndex - 1
+                      )
+                    "
                     @mousedown.stop="startResize($event, harmony)"
                     title="拖拽调整持续时间"
                   >
@@ -465,7 +483,10 @@ const getHarmonyStyle = (harmony: HarmonySegment, measureIndex: number) => {
 };
 
 // 仅在和声真实结束所在的小节显示拖拽手柄
-const shouldShowResizeHandle = (harmony: HarmonySegment, measureIndex: number) => {
+const shouldShowResizeHandle = (
+  harmony: HarmonySegment,
+  measureIndex: number
+) => {
   const measureStart = measureIndex * beatsPerMeasure.value;
   const measureEnd = (measureIndex + 1) * beatsPerMeasure.value;
   const harmonyEnd = harmony.startBeat + harmony.duration;
@@ -480,7 +501,7 @@ const canAddHarmonyAt = (measureIndex: number) => {
   const measureEnd = (measureIndex + 1) * beatsPerMeasure.value;
 
   // 检查该小节是否有任何和声块
-  const harmoniesInMeasure = props.segment.harmonies.filter(harmony => {
+  const harmoniesInMeasure = props.segment.harmonies.filter((harmony) => {
     const harmonyEndBeat = harmony.startBeat + harmony.duration;
     return (
       (harmony.startBeat >= measureStart && harmony.startBeat < measureEnd) ||
@@ -496,24 +517,27 @@ const canAddHarmonyAt = (measureIndex: number) => {
 
   // 检查是否有足够的空间添加新和声（至少需要1拍的空间）
   const minDuration = 1; // 最小和声持续时间为1拍
-  
+
   // 按起始拍排序
-  const sortedHarmonies = harmoniesInMeasure.sort((a, b) => a.startBeat - b.startBeat);
-  
+  const sortedHarmonies = harmoniesInMeasure.sort(
+    (a, b) => a.startBeat - b.startBeat
+  );
+
   // 检查小节开始到第一个和声之间的空间
   if (sortedHarmonies[0].startBeat - measureStart >= minDuration) {
     return true;
   }
-  
+
   // 检查和声之间的空隙
   for (let i = 0; i < sortedHarmonies.length - 1; i++) {
-    const currentEnd = sortedHarmonies[i].startBeat + sortedHarmonies[i].duration;
+    const currentEnd =
+      sortedHarmonies[i].startBeat + sortedHarmonies[i].duration;
     const nextStart = sortedHarmonies[i + 1].startBeat;
     if (nextStart - currentEnd >= minDuration) {
       return true;
     }
   }
-  
+
   // 检查最后一个和声到小节结束的空间
   const lastHarmony = sortedHarmonies[sortedHarmonies.length - 1];
   const lastEnd = lastHarmony.startBeat + lastHarmony.duration;
@@ -565,10 +589,11 @@ const addHarmony = (measureIndex: number) => {
   const measureEndBeat = (measureIndex + 1) * beatsPerMeasure.value;
 
   // 找到最佳的放置位置
-  const harmoniesInMeasure = props.segment.harmonies.filter(harmony => {
+  const harmoniesInMeasure = props.segment.harmonies.filter((harmony) => {
     const harmonyEndBeat = harmony.startBeat + harmony.duration;
     return (
-      (harmony.startBeat >= measureStartBeat && harmony.startBeat < measureEndBeat) ||
+      (harmony.startBeat >= measureStartBeat &&
+        harmony.startBeat < measureEndBeat) ||
       (harmonyEndBeat > measureStartBeat && harmonyEndBeat <= measureEndBeat) ||
       (harmony.startBeat < measureStartBeat && harmonyEndBeat > measureEndBeat)
     );
@@ -583,8 +608,10 @@ const addHarmony = (measureIndex: number) => {
     duration = Math.min(beatsPerMeasure.value, 2); // 默认2拍或整个小节
   } else {
     // 按起始拍排序
-    const sortedHarmonies = harmoniesInMeasure.sort((a, b) => a.startBeat - b.startBeat);
-    
+    const sortedHarmonies = harmoniesInMeasure.sort(
+      (a, b) => a.startBeat - b.startBeat
+    );
+
     // 尝试在小节开始放置
     if (sortedHarmonies[0].startBeat - measureStartBeat >= 1) {
       startBeat = measureStartBeat;
@@ -593,10 +620,11 @@ const addHarmony = (measureIndex: number) => {
       // 寻找和声之间的空隙
       let placed = false;
       for (let i = 0; i < sortedHarmonies.length - 1; i++) {
-        const currentEnd = sortedHarmonies[i].startBeat + sortedHarmonies[i].duration;
+        const currentEnd =
+          sortedHarmonies[i].startBeat + sortedHarmonies[i].duration;
         const nextStart = sortedHarmonies[i + 1].startBeat;
         const availableSpace = nextStart - currentEnd;
-        
+
         if (availableSpace >= 1) {
           startBeat = currentEnd;
           duration = Math.min(availableSpace, 2);
@@ -604,19 +632,19 @@ const addHarmony = (measureIndex: number) => {
           break;
         }
       }
-      
+
       // 如果没有找到空隙，尝试在最后放置
       if (!placed) {
         const lastHarmony = sortedHarmonies[sortedHarmonies.length - 1];
         const lastEnd = lastHarmony.startBeat + lastHarmony.duration;
         const availableSpace = measureEndBeat - lastEnd;
-        
+
         if (availableSpace >= 1) {
           startBeat = lastEnd;
           duration = Math.min(availableSpace, 2);
         } else {
           // 没有足够空间，不应该到达这里（canAddHarmonyAt应该已经检查过）
-          console.warn('No space available for new harmony');
+          console.warn("No space available for new harmony");
           return;
         }
       }
@@ -672,7 +700,9 @@ const editHarmony = (harmony: HarmonySegment) => {
 const dragCandidateHarmonyId = ref<string | null>(null);
 const draggingInitiated = ref(false);
 const DRAG_START_THRESHOLD_PX = 4;
-const dragPreviewPosition = ref<{ startBeat: number; isValid: boolean } | null>(null);
+const dragPreviewPosition = ref<{ startBeat: number; isValid: boolean } | null>(
+  null
+);
 
 const startDrag = (event: MouseEvent, harmony: HarmonySegment) => {
   // 双击仅用于编辑，不触发拖拽
@@ -689,7 +719,7 @@ const startDrag = (event: MouseEvent, harmony: HarmonySegment) => {
   dragPreviewPosition.value = null;
 
   // 获取行高用于计算垂直跨行
-  const rowEl = document.querySelector('.row-container') as HTMLElement | null;
+  const rowEl = document.querySelector(".row-container") as HTMLElement | null;
   rowHeightPx.value = rowEl?.offsetHeight || 120;
 
   document.addEventListener("mousemove", handleDrag);
@@ -712,16 +742,22 @@ const handleDrag = (event: MouseEvent) => {
 
   // 计算垂直方向跨行带来的拍子偏移
   const deltaY = event.clientY - dragStartY.value;
-  const deltaRows = rowHeightPx.value > 0 ? Math.round(deltaY / rowHeightPx.value) : 0;
+  const deltaRows =
+    rowHeightPx.value > 0 ? Math.round(deltaY / rowHeightPx.value) : 0;
   const deltaBeatY = deltaRows * beatsPerRow.value;
 
-  const newStartBeat = Math.max(0, dragStartBeat.value + deltaBeatX + deltaBeatY);
+  const newStartBeat = Math.max(
+    0,
+    dragStartBeat.value + deltaBeatX + deltaBeatY
+  );
 
   // 量化到最近的细分
   const quantizedBeat = quantizeBeat(newStartBeat);
 
   // 获取当前拖拽的和声信息
-  const currentHarmony = props.segment.harmonies.find(h => h.id === draggedHarmonyId.value);
+  const currentHarmony = props.segment.harmonies.find(
+    (h) => h.id === draggedHarmonyId.value
+  );
   if (!currentHarmony) return;
 
   // 检查新位置是否会造成重叠
@@ -735,7 +771,7 @@ const handleDrag = (event: MouseEvent) => {
   // 更新预览位置状态
   dragPreviewPosition.value = {
     startBeat: quantizedBeat,
-    isValid: !wouldOverlap
+    isValid: !wouldOverlap,
   };
 
   // 只有在不会重叠的情况下才实际更新位置
@@ -777,7 +813,9 @@ const handleResize = (event: MouseEvent) => {
   const finalDuration = Math.max(minStep, quantizedDuration);
 
   // 获取当前调整大小的和声信息
-  const currentHarmony = props.segment.harmonies.find(h => h.id === resizedHarmonyId.value);
+  const currentHarmony = props.segment.harmonies.find(
+    (h) => h.id === resizedHarmonyId.value
+  );
   if (!currentHarmony) return;
 
   // 检查新的持续时间是否会造成重叠
@@ -790,18 +828,28 @@ const handleResize = (event: MouseEvent) => {
 
   // 如果会重叠，计算允许的最大持续时间
   if (wouldOverlap) {
-    const beatsPerMeasure = props.segment.timeSignature?.numerator || store.timeSignature.numerator;
+    const beatsPerMeasure =
+      props.segment.timeSignature?.numerator || store.timeSignature.numerator;
     const segmentTotalBeats = props.segment.measures * beatsPerMeasure;
-    
+
     // 找到右侧最近的和声块
     const rightNeighbor = props.segment.harmonies
-      .filter(h => h.id !== resizedHarmonyId.value && h.startBeat > currentHarmony.startBeat)
+      .filter(
+        (h) =>
+          h.id !== resizedHarmonyId.value &&
+          h.startBeat > currentHarmony.startBeat
+      )
       .sort((a, b) => a.startBeat - b.startBeat)[0];
-    
-    const maxEndBeat = rightNeighbor ? rightNeighbor.startBeat : segmentTotalBeats;
+
+    const maxEndBeat = rightNeighbor
+      ? rightNeighbor.startBeat
+      : segmentTotalBeats;
     const maxDuration = maxEndBeat - currentHarmony.startBeat;
-    const clampedDuration = Math.max(minStep, Math.min(finalDuration, maxDuration));
-    
+    const clampedDuration = Math.max(
+      minStep,
+      Math.min(finalDuration, maxDuration)
+    );
+
     store.updateHarmony(resizedHarmonyId.value, { duration: clampedDuration });
   } else {
     // 只有在不会重叠的情况下才实际更新持续时间
@@ -1063,7 +1111,8 @@ const formatDuration = (duration: number) => {
 
 .add-harmony-btn {
   position: absolute;
-  top: 4px;
+  top: 50%;
+  transform: translateY(-50%);
   width: 24px;
   height: 24px;
   border-radius: 50%;
@@ -1079,7 +1128,7 @@ const formatDuration = (duration: number) => {
 
 .add-harmony-btn:hover {
   background: #85ce61;
-  transform: scale(1.1);
+  transform: translateY(-50%) scale(1.1);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
@@ -1102,7 +1151,8 @@ const formatDuration = (duration: number) => {
 }
 
 @keyframes float-editing {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0px);
     box-shadow: 0 4px 12px rgba(64, 158, 255, 0.4);
   }
@@ -1132,7 +1182,8 @@ const formatDuration = (duration: number) => {
 }
 
 @keyframes shake {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateX(0) translateY(-4px);
   }
   25% {
@@ -1159,7 +1210,7 @@ const formatDuration = (duration: number) => {
 }
 
 .resize-handle::after {
-  content: '';
+  content: "";
   width: 3px;
   height: 20px;
   background: white;

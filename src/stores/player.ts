@@ -466,7 +466,8 @@ export const usePlayerStore = defineStore('player', {
         isExpanded: false,
         harmonies: [],
         key: 'C',
-        mode: 'major'
+        mode: 'major',
+        color: '#409EFF'
       };
     },
 

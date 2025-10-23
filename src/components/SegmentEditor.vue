@@ -114,6 +114,19 @@
             留空则使用全局拍号 ({{ store.timeSignature.numerator }}/{{ store.timeSignature.denominator }})
           </div>
         </el-form-item>
+        
+        <!-- 片段颜色设置 -->
+        <el-form-item label="片段颜色">
+          <el-color-picker 
+            v-model="editForm.color" 
+            :predefine="predefineColors"
+            show-alpha
+            size="default"
+          />
+          <div style="font-size: 12px; color: #909399; margin-top: 4px;">
+            用于和声轨上片段块的显示颜色
+          </div>
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="cancelEdit">取消</el-button>
@@ -127,7 +140,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { ElCard, ElIcon, ElTag, ElButton, ElButtonGroup, ElDialog, ElForm, ElFormItem, ElInput, ElInputNumber, ElMessage, ElMessageBox } from 'element-plus'
+import { ElCard, ElIcon, ElTag, ElButton, ElButtonGroup, ElDialog, ElForm, ElFormItem, ElInput, ElInputNumber, ElMessage, ElMessageBox, ElColorPicker } from 'element-plus'
 import { ArrowRight, Edit, CopyDocument, Delete } from '@element-plus/icons-vue'
 import type { ProjectSegment, HarmonySegment } from '../types/progression'
 import { usePlayerStore } from '../stores/player'
@@ -157,6 +170,7 @@ const editForm = ref({
   measures: 4,
   key: 'C',
   mode: 'major',
+  color: '#409EFF',
   timeSignature: {
     numerator: 4,
     denominator: 4
@@ -165,6 +179,20 @@ const editForm = ref({
 
 // 音调选项
 const keys = ['C', 'C#', 'Db', 'D', 'D#', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'G#', 'Ab', 'A', 'A#', 'Bb', 'B']
+
+// 预定义颜色
+const predefineColors = [
+  '#409EFF', // 蓝色
+  '#67C23A', // 绿色
+  '#E6A23C', // 橙色
+  '#F56C6C', // 红色
+  '#909399', // 灰色
+  '#9C27B0', // 紫色
+  '#00BCD4', // 青色
+  '#FF9800', // 深橙色
+  '#4CAF50', // 深绿色
+  '#2196F3', // 深蓝色
+]
 
 // 表单验证规则
 const formRules = {
@@ -200,6 +228,7 @@ const editSegmentInfo = () => {
     measures: props.segment.measures,
     key: props.segment.key,
     mode: props.segment.mode,
+    color: props.segment.color || '#409EFF',
     timeSignature: {
       numerator: props.segment.timeSignature?.numerator || store.timeSignature.numerator,
       denominator: props.segment.timeSignature?.denominator || store.timeSignature.denominator
@@ -215,6 +244,7 @@ const cancelEdit = () => {
     measures: 4,
     key: 'C',
     mode: 'major',
+    color: '#409EFF',
     timeSignature: {
       numerator: 4,
       denominator: 4
@@ -277,6 +307,7 @@ const saveSegmentInfo = async () => {
       measures: editForm.value.measures,
       key: editForm.value.key,
       mode: editForm.value.mode,
+      color: editForm.value.color,
       timeSignature: editForm.value.timeSignature.numerator === store.timeSignature.numerator && 
                      editForm.value.timeSignature.denominator === store.timeSignature.denominator 
                      ? undefined 

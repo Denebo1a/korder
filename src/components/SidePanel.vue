@@ -1,7 +1,7 @@
 <template>
   <div class="harmony-panel">
     <div class="panel-header">
-      <h3 class="panel-title">编辑和声片段</h3>
+      <h3 class="panel-title">编辑</h3>
       <div v-if="harmony" class="header-actions">
         <el-color-picker
           v-model="editingHarmony.color"
@@ -28,171 +28,175 @@
       />
     </div>
 
-  <Transition name="form-content" mode="out-in">
-    <div v-if="harmony" :key="harmony.id" class="edit-form">
-      <el-form
-        :model="editingHarmony"
-        label-width="80px"
-        label-position="top"
-        :rules="formRules"
-        ref="formRef"
-      >
-        <!-- 基本信息 -->
-        <div class="form-section">
-          <h4 class="section-title">基本信息</h4>
+    <Transition name="form-content" mode="out-in">
+      <div v-if="harmony" :key="harmony.id" class="edit-form">
+        <el-form
+          :model="editingHarmony"
+          label-width="80px"
+          label-position="top"
+          :rules="formRules"
+          ref="formRef"
+        >
+          <!-- 基本信息 -->
+          <div class="form-section">
+            <h4 class="section-title">基本信息</h4>
 
-          <el-form-item label="根音级数" prop="rootDegree">
-            <div class="inline-controls">
+            <el-form-item label="根音级数" prop="rootDegree">
+              <div class="inline-controls">
+                <el-select
+                  v-model="editingHarmony.rootDegree"
+                  @change="updateHarmony"
+                  placeholder="选择根音级数"
+                  size="small"
+                  class="degree-select"
+                >
+                  <el-option label="I" value="I" />
+                  <el-option label="II" value="II" />
+                  <el-option label="III" value="III" />
+                  <el-option label="IV" value="IV" />
+                  <el-option label="V" value="V" />
+                  <el-option label="VI" value="VI" />
+                  <el-option label="VII" value="VII" />
+                </el-select>
+                <el-radio-group
+                  v-model="editingHarmony.accidental"
+                  @change="updateHarmony"
+                  size="small"
+                  class="accidental-group"
+                >
+                  <el-radio value="">无变化</el-radio>
+                  <el-radio value="b">♭</el-radio>
+                  <el-radio value="#">♯</el-radio>
+                </el-radio-group>
+              </div>
+            </el-form-item>
+
+            <el-form-item
+              label="升降号"
+              prop="accidental"
+              style="display: none"
+            >
+            </el-form-item>
+
+            <el-form-item label="和弦类型" prop="chordType">
               <el-select
-                v-model="editingHarmony.rootDegree"
+                v-model="editingHarmony.chordType"
                 @change="updateHarmony"
-                placeholder="选择根音级数"
+                style="width: 100%"
+                placeholder="选择和弦类型"
                 size="small"
-                class="degree-select"
               >
-                <el-option label="I" value="I" />
-                <el-option label="II" value="II" />
-                <el-option label="III" value="III" />
-                <el-option label="IV" value="IV" />
-                <el-option label="V" value="V" />
-                <el-option label="VI" value="VI" />
-                <el-option label="VII" value="VII" />
+                <el-option label="大三和弦 (Maj)" value="major" />
+                <el-option label="小三和弦 (m)" value="minor" />
+                <el-option label="增三和弦 (aug)" value="augmented" />
+                <el-option label="属七和弦 (7)" value="dominant7" />
+                <el-option label="大七和弦 (Maj7)" value="major7" />
+                <el-option label="小七和弦 (m7)" value="minor7" />
+                <el-option label="半减七和弦 (m7♭5)" value="half_diminished7" />
+                <el-option label="减七和弦 (dim7)" value="diminished7" />
               </el-select>
+            </el-form-item>
+
+            <el-form-item label="挂留类型" prop="suspensionType">
               <el-radio-group
-                v-model="editingHarmony.accidental"
+                v-model="editingHarmony.suspensionType"
                 @change="updateHarmony"
                 size="small"
-                class="accidental-group"
               >
-                <el-radio value="">无变化</el-radio>
-                <el-radio value="b">♭</el-radio>
-                <el-radio value="#">♯</el-radio>
+                <el-radio value="">无</el-radio>
+                <el-radio value="sus2">sus2</el-radio>
+                <el-radio value="sus4">sus4</el-radio>
               </el-radio-group>
-            </div>
-          </el-form-item>
+            </el-form-item>
+          </div>
 
-          <el-form-item label="升降号" prop="accidental" style="display: none">
-          </el-form-item>
+          <!-- 高级设置 -->
+          <div class="form-section">
+            <h4 class="section-title">高级设置</h4>
 
-          <el-form-item label="和弦类型" prop="chordType">
-            <el-select
-              v-model="editingHarmony.chordType"
-              @change="updateHarmony"
-              style="width: 100%"
-              placeholder="选择和弦类型"
-              size="small"
+            <el-form-item label="低音级数" prop="bassDegree">
+              <div class="inline-controls">
+                <el-select
+                  v-model="editingHarmony.bassDegree"
+                  @change="updateHarmony"
+                  placeholder="选择低音级数"
+                  clearable
+                  size="small"
+                  class="degree-select"
+                >
+                  <el-option label="I" value="I" />
+                  <el-option label="II" value="II" />
+                  <el-option label="III" value="III" />
+                  <el-option label="IV" value="IV" />
+                  <el-option label="V" value="V" />
+                  <el-option label="VI" value="VI" />
+                  <el-option label="VII" value="VII" />
+                </el-select>
+                <el-radio-group
+                  v-model="editingHarmony.bassAccidental"
+                  @change="updateHarmony"
+                  size="small"
+                  class="accidental-group"
+                >
+                  <el-radio value="">无变化</el-radio>
+                  <el-radio value="b">♭</el-radio>
+                  <el-radio value="#">♯</el-radio>
+                </el-radio-group>
+              </div>
+            </el-form-item>
+
+            <el-form-item
+              label="低音升降号"
+              prop="bassAccidental"
+              style="display: none"
             >
-              <el-option label="大三和弦 (Maj)" value="major" />
-              <el-option label="小三和弦 (m)" value="minor" />
-              <el-option label="增三和弦 (aug)" value="augmented" />
-              <el-option label="属七和弦 (7)" value="dominant7" />
-              <el-option label="大七和弦 (Maj7)" value="major7" />
-              <el-option label="小七和弦 (m7)" value="minor7" />
-              <el-option label="半减七和弦 (m7♭5)" value="half_diminished7" />
-              <el-option label="减七和弦 (dim7)" value="diminished7" />
-            </el-select>
-          </el-form-item>
+            </el-form-item>
 
-          <el-form-item label="挂留类型" prop="suspensionType">
-            <el-radio-group
-              v-model="editingHarmony.suspensionType"
-              @change="updateHarmony"
-              size="small"
-            >
-              <el-radio value="">无</el-radio>
-              <el-radio value="sus2">sus2</el-radio>
-              <el-radio value="sus4">sus4</el-radio>
-            </el-radio-group>
-          </el-form-item>
-        </div>
-
-        <!-- 高级设置 -->
-        <div class="form-section">
-          <h4 class="section-title">高级设置</h4>
-
-          <el-form-item label="低音级数" prop="bassDegree">
-            <div class="inline-controls">
+            <el-form-item label="扩展音" prop="extensions">
               <el-select
-                v-model="editingHarmony.bassDegree"
-                @change="updateHarmony"
-                placeholder="选择低音级数"
-                clearable
+                v-model="editingHarmony.extensions"
+                multiple
+                placeholder="选择扩展音"
+                style="width: 100%"
+                collapse-tags
+                collapse-tags-tooltip
                 size="small"
-                class="degree-select"
               >
-                <el-option label="I" value="I" />
-                <el-option label="II" value="II" />
-                <el-option label="III" value="III" />
-                <el-option label="IV" value="IV" />
-                <el-option label="V" value="V" />
-                <el-option label="VI" value="VI" />
-                <el-option label="VII" value="VII" />
+                <el-option value="9" label="9" />
+                <el-option value="b9" label="♭9" />
+                <el-option value="#9" label="♯9" />
+                <el-option value="11" label="11" />
+                <el-option value="#11" label="♯11" />
+                <el-option value="13" label="13" />
+                <el-option value="b13" label="♭13" />
               </el-select>
-              <el-radio-group
-                v-model="editingHarmony.bassAccidental"
-                @change="updateHarmony"
+            </el-form-item>
+
+            <el-form-item label="省略音" prop="omissions">
+              <el-select
+                v-model="editingHarmony.omissions"
+                multiple
+                placeholder="选择省略音"
+                style="width: 100%"
+                collapse-tags
+                collapse-tags-tooltip
                 size="small"
-                class="accidental-group"
               >
-                <el-radio value="">无变化</el-radio>
-                <el-radio value="b">♭</el-radio>
-                <el-radio value="#">♯</el-radio>
-              </el-radio-group>
-            </div>
-          </el-form-item>
+                <el-option value="Root" label="Root" />
+                <el-option value="3" label="3" />
+                <el-option value="5" label="5" />
+                <el-option value="7" label="7" />
+                <el-option value="9" label="9" />
+                <el-option value="11" label="11" />
+              </el-select>
+            </el-form-item>
+          </div>
 
-          <el-form-item
-            label="低音升降号"
-            prop="bassAccidental"
-            style="display: none"
-          >
-          </el-form-item>
-
-          <el-form-item label="扩展音" prop="extensions">
-            <el-select
-              v-model="editingHarmony.extensions"
-              multiple
-              placeholder="选择扩展音"
-              style="width: 100%"
-              collapse-tags
-              collapse-tags-tooltip
-              size="small"
-            >
-              <el-option value="9" label="9" />
-              <el-option value="b9" label="♭9" />
-              <el-option value="#9" label="♯9" />
-              <el-option value="11" label="11" />
-              <el-option value="#11" label="♯11" />
-              <el-option value="13" label="13" />
-              <el-option value="b13" label="♭13" />
-            </el-select>
-          </el-form-item>
-
-          <el-form-item label="省略音" prop="omissions">
-            <el-select
-              v-model="editingHarmony.omissions"
-              multiple
-              placeholder="选择省略音"
-              style="width: 100%"
-              collapse-tags
-              collapse-tags-tooltip
-              size="small"
-            >
-              <el-option value="Root" label="Root" />
-              <el-option value="3" label="3" />
-              <el-option value="5" label="5" />
-              <el-option value="7" label="7" />
-              <el-option value="9" label="9" />
-              <el-option value="11" label="11" />
-            </el-select>
-          </el-form-item>
-        </div>
-
-        <!-- 时间设置 -->
-        <!-- 时间设置已移除，现在通过拖拽直接调整 -->
-      </el-form>
-    </div>
-  </Transition>
+          <!-- 时间设置 -->
+          <!-- 时间设置已移除，现在通过拖拽直接调整 -->
+        </el-form>
+      </div>
+    </Transition>
   </div>
 </template>
 

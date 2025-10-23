@@ -31,6 +31,7 @@ export interface ProjectSegment {
   key: string;            // 片段调性主音（如 "C", "D", "E"等）
   mode: string;           // 片段调式（目前仅支持 "major"）
   timeSignature?: TimeSignature; // 片段拍号（可选，不设置则使用全局拍号）
+  color?: string;         // 片段颜色（用于和声轨显示）
 }
 
 // 和声轨道（保留用于兼容性）
