@@ -76,7 +76,6 @@ export interface PlayerState {
   beatOffset: number; // 初始强拍偏移量（秒）
   
   // 显示设置
-  showWaveform: boolean;
   measuresPerRow: number; // 每行显示的小节数
   quantization: QuantizationType; // 全局量化级别
 }

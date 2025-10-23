@@ -25,7 +25,6 @@ export const usePlayerStore = defineStore('player', {
     beatOffset: 0, // 初始强拍偏移量（秒）
     
     // 显示设置
-    showWaveform: true,
     measuresPerRow: 4, // 每行显示的小节数
     quantization: 'quarter' as const, // 默认四分音符量化
   }),
@@ -484,7 +483,6 @@ export const usePlayerStore = defineStore('player', {
       this.hasAudio = false;
       this.volume = 0.8;
       this.beatOffset = 0; // 重置初始强拍偏移量
-      this.showWaveform = true;
       this.measuresPerRow = 4;
     }
   }

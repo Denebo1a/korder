@@ -3,46 +3,101 @@
     <!-- 顶部工具栏 -->
     <el-header class="app-header">
       <div class="header-left">
-        <h1 class="app-title">和弦进行播放器</h1>
+        <!-- Logo下拉菜单 -->
+        <el-dropdown @command="handleLogoMenuCommand" trigger="click">
+          <img
+            src="./assets/img/korder-logo.png"
+            class="logo-dropdown"
+            title="项目管理"
+          />
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="new" :icon="DocumentAdd">
+                新建项目
+              </el-dropdown-item>
+              <el-dropdown-item command="load" :icon="FolderOpened">
+                加载项目
+              </el-dropdown-item>
+              <el-dropdown-item command="save" :icon="Download">
+                保存项目
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+
+        <el-divider direction="vertical" />
+        <!-- 播放信息与设置（放在播放控制左侧） -->
+        <div class="time-info">
+          <el-tag size="small" type="info">
+            {{ formatTime(store.currentSec) }} /
+            {{ formatTime(store.audioDuration) }}
+          </el-tag>
+          <el-tag size="small" type="success">
+            拍: {{ store.adjustedCurrentBeat.toFixed(1) }}
+          </el-tag>
+        </div>
+
+        <!-- BPM 设置 -->
+        <div class="setting-item">
+          <span class="setting-label">BPM:</span>
+          <el-input-number
+            v-model="store.bpm"
+            @change="onBpmChange"
+            :min="20"
+            :max="300"
+            size="small"
+            style="width: 100px"
+          />
+        </div>
+
+        <!-- 量化级别 -->
+        <div class="setting-item">
+          <span class="setting-label">量化:</span>
+          <el-select
+            v-model="store.quantization"
+            size="small"
+            style="width: 100px"
+          >
+            <el-option value="quarter" label="1拍" />
+            <el-option value="eighth" label="1/2拍" />
+            <el-option value="sixteenth" label="1/4拍" />
+          </el-select>
+        </div>
+
         <el-divider direction="vertical" />
 
         <!-- 播放控制 -->
         <div class="control-group">
           <el-button-group>
-            <el-button @click="seekToStart" :icon="DArrowLeft" size="small" />
+            <el-button
+              @click="seekToStart"
+              size="small"
+              title="跳转至初始强拍位置"
+            >
+              <img
+                src="./assets/img/init.svg"
+                class="button-icon"
+                alt="跳转至开头"
+              />
+            </el-button>
             <el-button
               @click="togglePlay"
               :type="store.isPlaying ? 'danger' : 'primary'"
-              :icon="store.isPlaying ? VideoPause : VideoPlay"
               size="small"
-            />
-            <el-button @click="stopPlay" :icon="Close" size="small" />
-          </el-button-group>
-        </div>
-
-        <el-divider direction="vertical" />
-
-        <!-- 项目管理 -->
-        <div class="control-group">
-          <el-button-group>
-            <el-button
-              @click="newProject"
-              :icon="DocumentAdd"
-              size="small"
-              title="新建项目"
-            />
-            <el-button
-              @click="loadProject"
-              :icon="FolderOpened"
-              size="small"
-              title="加载项目"
-            />
-            <el-button
-              @click="saveProject"
-              :icon="Download"
-              size="small"
-              title="保存项目"
-            />
+            >
+              <img
+                :src="
+                  store.isPlaying
+                    ? './assets/img/pause.svg'
+                    : './assets/img/play.svg'
+                "
+                class="button-icon"
+                :alt="store.isPlaying ? '暂停' : '播放'"
+              />
+            </el-button>
+            <el-button @click="stopPlay" size="small">
+              <img src="./assets/img/stop.svg" class="button-icon" alt="停止" />
+            </el-button>
           </el-button-group>
         </div>
 
@@ -51,7 +106,7 @@
         <!-- 音频导入 -->
         <el-button
           @click="fileInput?.click()"
-          :icon="Microphone"
+          :icon="Upload"
           size="small"
           title="导入音频"
         >
@@ -73,39 +128,7 @@
       </div>
 
       <div class="header-right">
-        <!-- BPM 设置 -->
-        <div class="setting-item">
-          <span class="setting-label">BPM:</span>
-          <el-input-number
-            v-model="store.bpm"
-            @change="onBpmChange"
-            :min="20"
-            :max="300"
-            size="small"
-            style="width: 80px"
-          />
-        </div>
-
-        <!-- 量化级别 -->
-        <div class="setting-item">
-          <span class="setting-label">量化:</span>
-          <el-select
-            v-model="store.quantization"
-            size="small"
-            style="width: 100px"
-          >
-            <el-option value="quarter" label="1拍" />
-            <el-option value="eighth" label="1/2拍" />
-            <el-option value="sixteenth" label="1/4拍" />
-          </el-select>
-        </div>
-
-        <!-- 视图选项 -->
-        <el-switch
-          v-model="store.showWaveform"
-          active-text="波形"
-          size="small"
-        />
+        <!-- 右侧暂留空，保留布局占位 -->
       </div>
     </el-header>
 
@@ -114,7 +137,7 @@
       <!-- 左侧主内容区域 -->
       <el-main ref="appMainRef" class="app-main">
         <!-- 波形显示区域 -->
-        <el-card v-if="store.showWaveform" class="waveform-card" shadow="never">
+        <el-card class="waveform-card" shadow="never">
           <div class="waveform-container">
             <div ref="waveformRef" class="waveform"></div>
             <!-- 初始强拍游标 -->
@@ -129,8 +152,13 @@
               <div class="cursor-handle">♪</div>
             </div>
           </div>
-          <div v-if="!store.hasAudio" class="waveform-placeholder">
-            <el-empty description="请导入音频文件以显示波形" :image-size="60" />
+          <div
+            v-if="!store.hasAudio"
+            class="waveform-placeholder"
+            @click="fileInput?.click()"
+          >
+            <el-icon><Upload /></el-icon>
+            <el-text>点击此处导入音频文件（支持.mp3/.wav/.flac）</el-text>
           </div>
 
           <!-- 和声轨 -->
@@ -144,15 +172,6 @@
           <template #header>
             <div class="timeline-header">
               <span>和声进行</span>
-              <div class="time-info">
-                <el-tag size="small" type="info">
-                  {{ formatTime(store.currentSec) }} /
-                  {{ formatTime(store.audioDuration) }}
-                </el-tag>
-                <el-tag size="small" type="success">
-                  拍: {{ store.adjustedCurrentBeat.toFixed(1) }}
-                </el-tag>
-              </div>
             </div>
           </template>
 
@@ -240,15 +259,11 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, nextTick } from "vue";
 import {
-  VideoPlay,
-  VideoPause,
-  Close,
-  DArrowLeft,
   DocumentAdd,
   FolderOpened,
   Download,
-  Microphone,
   Timer,
+  Upload,
 } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import Timeline from "./components/Timeline.vue";
@@ -278,22 +293,6 @@ const isDraggingCursor = ref(false);
 
 // 侧边栏状态
 const selectedHarmony = ref<HarmonySegment | null>(null);
-
-// 检查内容是否溢出并更新滚动条状态
-const checkScrollable = () => {
-  if (appMainRef.value && appMainRef.value.$el) {
-    const element = appMainRef.value.$el;
-    const isScrollable = element.scrollHeight > element.clientHeight;
-    if (isScrollable) {
-      element.classList.remove("no-scroll");
-    } else {
-      element.classList.add("no-scroll");
-    }
-  }
-};
-
-// 使用 ResizeObserver 监听内容变化
-const resizeObserver = ref<ResizeObserver | null>(null);
 
 // 初始化示例数据
 const initSampleData = () => {
@@ -367,33 +366,28 @@ onMounted(async () => {
 
   // 添加键盘事件监听
   document.addEventListener("keydown", handleKeyDown);
-
-  // 初始化滚动条状态检查
-  if (appMainRef.value && appMainRef.value.$el) {
-    // 使用 nextTick 确保 DOM 已完全渲染
-    await nextTick();
-    // 初始检查
-    checkScrollable();
-
-    // 设置 ResizeObserver 监听内容变化
-    resizeObserver.value = new ResizeObserver(() => {
-      checkScrollable();
-    });
-    resizeObserver.value.observe(appMainRef.value.$el);
-  }
 });
 
 onUnmounted(() => {
   // 移除键盘事件监听
   document.removeEventListener("keydown", handleKeyDown);
-
-  // 清理 ResizeObserver
-  if (resizeObserver.value) {
-    resizeObserver.value.disconnect();
-  }
 });
 
 // 方法
+const handleLogoMenuCommand = (command: string) => {
+  switch (command) {
+    case "new":
+      newProject();
+      break;
+    case "load":
+      loadProject();
+      break;
+    case "save":
+      saveProject();
+      break;
+  }
+};
+
 const togglePlay = async () => {
   try {
     if (store.isPlaying) {
@@ -417,9 +411,13 @@ const stopPlay = () => {
 };
 
 const seekToStart = () => {
-  transport.seekTransportSeconds(0);
-  wave.seekSeconds(0);
-  store.setCurrentTime(0);
+  const offset = Math.min(
+    Math.max(store.beatOffset || 0, 0),
+    store.audioDuration || 0
+  );
+  transport.seekTransportSeconds(offset);
+  wave.seekSeconds(offset);
+  store.setCurrentTime(offset);
 };
 
 const onBpmChange = () => {
@@ -635,36 +633,12 @@ const startDragCursor = (event: MouseEvent) => {
 .app-main {
   flex: 1;
   padding: 20px;
-  overflow-y: scroll;
+  overflow-y: hidden;
   overflow-x: hidden;
   height: 100%;
 }
 
-/* 自定义滚动条样式 - 常驻显示但在无溢出时禁用 */
-.app-main::-webkit-scrollbar {
-  width: 12px;
-}
-
-.app-main::-webkit-scrollbar-track {
-  background: var(--el-fill-color-lighter);
-  border-radius: 6px;
-}
-
-.app-main::-webkit-scrollbar-thumb {
-  background: var(--el-border-color);
-  border-radius: 6px;
-  transition: background-color 0.2s ease;
-}
-
-.app-main::-webkit-scrollbar-thumb:hover {
-  background: var(--el-border-color-dark);
-}
-
-/* 当内容不足以滚动时，滚动条拇指变为透明但轨道保持可见 */
-.app-main.no-scroll::-webkit-scrollbar-thumb {
-  background: transparent;
-  pointer-events: none;
-}
+/* 移除自定义滚动条样式 */
 
 .app-sidebar {
   width: 380px;
@@ -715,7 +689,7 @@ const startDragCursor = (event: MouseEvent) => {
 .header-left {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
 }
 
 .header-right {
@@ -809,10 +783,18 @@ const startDragCursor = (event: MouseEvent) => {
 }
 
 .waveform-placeholder {
-  height: 120px;
+  height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 20px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-radius: 8px;
+}
+
+.waveform-placeholder:hover {
+  background-color: var(--el-fill-color-light);
 }
 
 .timeline-card {
@@ -858,6 +840,46 @@ const startDragCursor = (event: MouseEvent) => {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+}
+
+/* 自定义按钮图标样式 */
+.button-icon {
+  width: 12px;
+  height: 12px;
+  display: block;
+  fill: rgb(115, 118, 122);
+  filter: currentColor;
+}
+
+.logo-dropdown {
+  cursor: pointer;
+  transition: opacity 0.2s ease, background-color 0.2s ease,
+    border-radius 0.2s ease;
+  background-color: transparent;
+  border-radius: 5px;
+}
+
+.logo-dropdown:hover {
+  opacity: 0.8;
+  background-color: #e0e0e0;
+}
+
+/* 确保按钮图标在不同状态下的颜色正确 */
+.el-button--primary .button-icon {
+  filter: brightness(0) invert(1);
+}
+
+.el-button--danger .button-icon {
+  filter: brightness(0) invert(1);
+}
+
+.el-button:hover .button-icon {
+  filter: brightness(0.8);
+}
+
+.el-button--primary:hover .button-icon,
+.el-button--danger:hover .button-icon {
+  filter: brightness(0) invert(1);
 }
 
 /* 响应式设计 */
