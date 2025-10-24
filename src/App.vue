@@ -891,6 +891,10 @@ const startDragCursor = (event: MouseEvent) => {
   background-color: #e0e0e0;
 }
 
+.waveform-card {
+  position: relative;
+}
+
 /* 响应式设计 */
 @media (max-width: 1200px) {
   .app-sidebar {
