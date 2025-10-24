@@ -968,9 +968,10 @@ const formatDuration = (duration: number) => {
 
 .measure-content {
   position: relative;
-  height: 100px;
+  height: 90px;
   padding: 12px;
   padding-top: 30px; /* 为小节数字留出空间 */
+  padding-bottom: 0px;
 }
 
 .beat-grid {
@@ -1032,12 +1033,12 @@ const formatDuration = (duration: number) => {
 
 .harmony-layer {
   position: relative;
-  height: 60px;
+  height: 50px;
 }
 
 .harmony-segment {
   position: absolute;
-  height: 60px;
+  height: 50px;
   border-radius: 6px;
   display: flex;
   align-items: center;
@@ -1116,7 +1117,7 @@ const formatDuration = (duration: number) => {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: #67c23a;
+  background: #409eff;
   color: white;
   display: flex;
   align-items: center;
@@ -1127,7 +1128,7 @@ const formatDuration = (duration: number) => {
 }
 
 .add-harmony-btn:hover {
-  background: #85ce61;
+  background: #79bbff;
   transform: translateY(-50%) scale(1.1);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }

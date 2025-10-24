@@ -505,7 +505,7 @@ const clearTimeSignature = () => {
 }
 
 .segment-content {
-  padding: 16px;
+  padding: 0px 16px 16px 16px;
   background: #fafafa;
   margin: 0 -20px -20px -20px;
   border-radius: 0 0 12px 12px;
@@ -514,7 +514,7 @@ const clearTimeSignature = () => {
 
 /* Element Plus 组件样式覆盖 */
 :deep(.el-card__header) {
-  padding: 16px 20px;
+  padding: 12px 20px;
   background: linear-gradient(135deg, #f8f9fa, #ffffff);
   border-bottom: 1px solid #e4e7ed;
 }
@@ -530,7 +530,7 @@ const clearTimeSignature = () => {
 }
 
 :deep(.el-button-group .el-button) {
-  border-radius: 6px;
+  border-radius: 12px;
 }
 
 :deep(.el-dialog) {
@@ -552,5 +552,14 @@ const clearTimeSignature = () => {
 
 :deep(.el-input-number) {
   border-radius: 8px;
+}
+
+:deep(.el-color-picker__trigger) {
+  border-radius: 6px;
+  width: 60px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  height: 100%;
 }
 </style>

@@ -149,3 +149,53 @@ App.vue 请将“播放控制”中的图标按照以下规则替换：
 App.vue 现在我正在编辑el-header内的元素：
 
 请将现在的<img src="./assets/img/korder-logo.png" />标签，作为一个可点击的区域，点击后出现下拉菜单，菜单项为原来的三个按钮 button button button 对应的功能，注意菜单项同时显示图标与文字说明
+
+---------------------------------------------------------------------
+
+App.vue 现在我正在编辑el-header内的元素：
+
+（1）删除现在的“导入音频“按钮，因为已经可以通过点击下方区域触发功能
+
+（2）将除了logo以外的标签/按钮全部增大，但是减少边距，使得菜单栏的高度不发生变化
+
+---------------------------------------------------------------------
+
+App.vue 现在我正在编辑el-header内的元素：
+
+（1）删除拍数的显示标签
+
+（2）现在播放/暂停时：
+
+<el-button
+
+@click="togglePlay"
+
+:type="store.isPlaying ? 'danger' : 'primary'"
+
+size="default"
+
+>
+
+<img
+
+:src="
+
+store.isPlaying
+
+? './assets/img/pause.svg'
+
+: './assets/img/play.svg'
+
+"
+
+class="button-icon"
+
+:alt="store.isPlaying ? '暂停' : '播放'"
+
+/>
+
+该按钮标签的图标显示不正常，一直显示两个svg重叠，请修复。
+
+---------------------------------------------------------------------
+
+现在仍使用 init.svg pause.svg play.svg stop.svg 图标，但是不使用el-button实现这三个按钮 button button button ，而是使用原生的html标签，实现无边框，鼠标悬浮时背景变为灰色的按钮。

@@ -5,11 +5,7 @@
       <div class="header-left">
         <!-- Logo下拉菜单 -->
         <el-dropdown @command="handleLogoMenuCommand" trigger="click">
-          <img
-            src="./assets/img/korder-logo.png"
-            class="logo-dropdown"
-            title="项目管理"
-          />
+          <img src="/korder-logo.png" class="logo-dropdown" title="项目管理" />
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item command="new" :icon="DocumentAdd">
@@ -28,35 +24,48 @@
         <el-divider direction="vertical" />
         <!-- 播放信息与设置（放在播放控制左侧） -->
         <div class="time-info">
-          <el-tag size="small" type="info">
-            {{ formatTime(store.currentSec) }} /
-            {{ formatTime(store.audioDuration) }}
-          </el-tag>
-          <el-tag size="small" type="success">
-            拍: {{ store.adjustedCurrentBeat.toFixed(1) }}
+          <el-tag size="large" color="#000000" effect="dark" round type="info">
+            <span class="current-time-label"
+              >{{ formatTime(store.currentSec) }} /
+              {{ formatTime(store.audioDuration) }}</span
+            >
           </el-tag>
         </div>
 
+        <el-divider direction="vertical" />
         <!-- BPM 设置 -->
         <div class="setting-item">
-          <span class="setting-label">BPM:</span>
+          <img src="/BPM.png" class="setting-icon" />
           <el-input-number
             v-model="store.bpm"
             @change="onBpmChange"
             :min="20"
             :max="300"
-            size="small"
-            style="width: 100px"
+            size="default"
+            style="width: 110px"
           />
         </div>
 
         <!-- 量化级别 -->
         <div class="setting-item">
-          <span class="setting-label">量化:</span>
+          <svg
+            t="1761233994322"
+            viewBox="0 0 1024 1024"
+            version="1.1"
+            xmlns="http://www.w3.org/2000/svg"
+            p-id="29831"
+            width="24"
+            height="24"
+          >
+            <path
+              d="M678.218667 302.602667H842.666667a32 32 0 0 1 31.946666 30.122666l0.053334 1.877334V522.666667c0 212.074667-150.592 384-362.666667 384-209.952 0-359.648-168.501333-362.624-377.653334L149.333333 522.666667V334.613333a32 32 0 0 1 30.122667-31.946666l1.877333-0.064h164.437334a32 32 0 0 1 31.946666 30.112l0.053334 1.888v202.613333c0 72.010667 56.778667 130.944 127.893333 134.08l3.306667 0.106667 3.029333 0.032c72.010667 0 130.944-56.768 134.08-127.893334l0.106667-3.285333 0.032-3.04V334.613333a32 32 0 0 1 30.122666-31.946666l1.877334-0.053334z m95.776 316.853333c-22.208 73.866667-75.082667 135.146667-144.64 168.202667a21.333333 21.333333 0 0 0 18.314666 38.538666c80.416-38.218667 141.504-109.013333 167.189334-194.453333a21.333333 21.333333 0 0 0-40.864-12.288zM349.077333 117.333333c15.850667 0 28.693333 11.797333 28.693334 26.346667v96.64c0 14.549333-12.842667 26.346667-28.693334 26.346667H182.474667c-15.850667 0-28.693333-11.797333-28.693334-26.346667v-96.64c0-14.549333 12.842667-26.346667 28.693334-26.346667z m492.448 0c15.850667 0 28.693333 11.797333 28.693334 26.346667v96.64c0 14.549333-12.842667 26.346667-28.693334 26.346667h-166.613333c-15.84 0-28.693333-11.797333-28.693333-26.346667v-96.64c0-14.549333 12.853333-26.346667 28.693333-26.346667z"
+              p-id="29832"
+            ></path>
+          </svg>
           <el-select
             v-model="store.quantization"
-            size="small"
-            style="width: 100px"
+            size="default"
+            style="width: 110px"
           >
             <el-option value="quarter" label="1拍" />
             <el-option value="eighth" label="1/2拍" />
@@ -68,50 +77,31 @@
 
         <!-- 播放控制 -->
         <div class="control-group">
-          <el-button-group>
-            <el-button
+          <div class="custom-button-group">
+            <button
               @click="seekToStart"
-              size="small"
+              class="custom-button"
               title="跳转至初始强拍位置"
             >
-              <img
-                src="./assets/img/init.svg"
-                class="button-icon"
-                alt="跳转至开头"
-              />
-            </el-button>
-            <el-button
+              <img src="/init.svg" class="button-icon" alt="跳转至开头" />
+            </button>
+            <button
               @click="togglePlay"
-              :type="store.isPlaying ? 'danger' : 'primary'"
-              size="small"
+              class="custom-button"
+              :class="{ playing: store.isPlaying }"
+              :title="store.isPlaying ? '暂停' : '播放'"
             >
               <img
-                :src="
-                  store.isPlaying
-                    ? './assets/img/pause.svg'
-                    : './assets/img/play.svg'
-                "
+                :src="store.isPlaying ? '/pause.svg' : '/play.svg'"
                 class="button-icon"
                 :alt="store.isPlaying ? '暂停' : '播放'"
               />
-            </el-button>
-            <el-button @click="stopPlay" size="small">
-              <img src="./assets/img/stop.svg" class="button-icon" alt="停止" />
-            </el-button>
-          </el-button-group>
+            </button>
+            <button @click="stopPlay" class="custom-button" title="停止">
+              <img src="/stop.svg" class="button-icon" alt="停止" />
+            </button>
+          </div>
         </div>
-
-        <el-divider direction="vertical" />
-
-        <!-- 音频导入 -->
-        <el-button
-          @click="fileInput?.click()"
-          :icon="Upload"
-          size="small"
-          title="导入音频"
-        >
-          导入音频
-        </el-button>
 
         <el-divider direction="vertical" />
 
@@ -119,7 +109,7 @@
         <el-button
           @click="openBeatOffsetDialog"
           :icon="Timer"
-          size="small"
+          size="default"
           title="设定初始强拍"
           :disabled="!store.hasAudio"
         >
@@ -169,12 +159,6 @@
 
         <!-- 时间轴区域 -->
         <el-card class="timeline-card" shadow="never">
-          <template #header>
-            <div class="timeline-header">
-              <span>和声进行</span>
-            </div>
-          </template>
-
           <Timeline @edit-harmony="onEditHarmony" />
         </el-card>
       </el-main>
@@ -192,7 +176,11 @@
               @close="onCloseSidePanel"
             />
             <div v-else key="placeholder" class="sidebar-placeholder">
-              <el-empty description="双击和声块进行编辑" :image-size="80" />
+              <el-empty
+                description="双击和声块进行编辑"
+                image="/side-panel-empty.png"
+                :image-size="128"
+              />
             </div>
           </Transition>
         </div>
@@ -273,6 +261,7 @@ import { usePlayerStore } from "./stores/player";
 import type { ProgressionFile, HarmonySegment } from "./types/progression";
 import * as transport from "./services/transport";
 import * as wave from "./services/wave";
+import emptyImage from "./assets/img/side-panel-empty.png";
 
 const store = usePlayerStore();
 
@@ -689,7 +678,7 @@ const startDragCursor = (event: MouseEvent) => {
 .header-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .header-right {
@@ -713,13 +702,12 @@ const startDragCursor = (event: MouseEvent) => {
 .setting-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
-.setting-label {
-  font-size: 12px;
-  color: var(--el-text-color-regular);
-  white-space: nowrap;
+.setting-icon {
+  height: 32px;
+  width: 32px;
 }
 
 .harmony-track-container {
@@ -802,15 +790,15 @@ const startDragCursor = (event: MouseEvent) => {
   width: 100%;
 }
 
-.timeline-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
 .time-info {
   display: flex;
-  gap: 8px;
+  gap: 6px;
+}
+
+.current-time-label {
+  font-size: 14px;
+  font-family: Cambria, Cochin, Georgia, Times, "Times New Roman", serif;
+  font-weight: bold;
 }
 
 /* 设定初始强拍对话框样式 */
@@ -842,13 +830,52 @@ const startDragCursor = (event: MouseEvent) => {
   gap: 12px;
 }
 
-/* 自定义按钮图标样式 */
+/* 自定义按钮组样式 */
+.custom-button-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.custom-button {
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+  outline: none;
+}
+
+.custom-button:hover {
+  background-color: #f0f0f0;
+}
+
+.custom-button:active {
+  background-color: #e0e0e0;
+}
+
+.custom-button.playing {
+  background-color: #e0e0e0;
+  color: white;
+}
+
+.custom-button.playing:hover {
+  background-color: #c9c9c9;
+}
+
 .button-icon {
-  width: 12px;
-  height: 12px;
+  width: 16px;
+  height: 16px;
   display: block;
-  fill: rgb(115, 118, 122);
-  filter: currentColor;
+  fill: currentColor;
+}
+
+.custom-button.playing .button-icon {
+  fill: white;
 }
 
 .logo-dropdown {
@@ -862,24 +889,6 @@ const startDragCursor = (event: MouseEvent) => {
 .logo-dropdown:hover {
   opacity: 0.8;
   background-color: #e0e0e0;
-}
-
-/* 确保按钮图标在不同状态下的颜色正确 */
-.el-button--primary .button-icon {
-  filter: brightness(0) invert(1);
-}
-
-.el-button--danger .button-icon {
-  filter: brightness(0) invert(1);
-}
-
-.el-button:hover .button-icon {
-  filter: brightness(0.8);
-}
-
-.el-button--primary:hover .button-icon,
-.el-button--danger:hover .button-icon {
-  filter: brightness(0) invert(1);
 }
 
 /* 响应式设计 */

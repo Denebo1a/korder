@@ -3,7 +3,7 @@
     <!-- 工具栏 -->
     <div class="timeline-toolbar">
       <div class="toolbar-left">
-        <el-button type="primary" @click="addNewSegment" :icon="Plus">
+        <el-button type="primary" @click="addNewSegment" :icon="Plus" round>
           添加片段
         </el-button>
         <el-divider direction="vertical" />
@@ -219,7 +219,7 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0px 16px 20px;
+  padding: 0px 12px 20px;
   background: var(--el-bg-color);
   border-bottom: 1px solid var(--el-border-color-light);
   flex-shrink: 0;
@@ -258,7 +258,7 @@ onUnmounted(() => {
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 6px;
   min-height: 100%; /* 确保容器至少占满父容器高度 */
 }
 
