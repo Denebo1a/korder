@@ -156,7 +156,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { ElRadioGroup, ElRadioButton, ElIcon } from "element-plus";
+import { ElIcon } from "element-plus";
 import { Plus } from "@element-plus/icons-vue";
 import { usePlayerStore } from "../stores/player";
 import type { ProjectSegment, HarmonySegment } from "../types/progression";
@@ -314,16 +314,6 @@ const isPlayingInMeasure = (measureIndex: number) => {
     currentBeatInSegment.value >= measureStartBeat &&
     currentBeatInSegment.value < measureEndBeat
   );
-};
-
-// 检查是否是当前播放的拍子
-const isCurrentBeat = (measureIndex: number, beatIndex: number) => {
-  if (!store.isPlaying || currentBeatInSegment.value < 0) return false;
-
-  const absoluteBeat = measureIndex * beatsPerMeasure.value + beatIndex;
-  const currentBeat = Math.floor(currentBeatInSegment.value);
-
-  return currentBeat === absoluteBeat;
 };
 
 // 获取和弦名称（不包含级数）- 改为计算属性以支持响应式更新
@@ -524,7 +514,7 @@ const canAddHarmonyAt = (measureIndex: number) => {
   );
 
   // 检查小节开始到第一个和声之间的空间
-  if (sortedHarmonies[0].startBeat - measureStart >= minDuration) {
+  if (sortedHarmonies.length > 0 && sortedHarmonies[0].startBeat - measureStart >= minDuration) {
     return true;
   }
 
@@ -539,10 +529,12 @@ const canAddHarmonyAt = (measureIndex: number) => {
   }
 
   // 检查最后一个和声到小节结束的空间
-  const lastHarmony = sortedHarmonies[sortedHarmonies.length - 1];
-  const lastEnd = lastHarmony.startBeat + lastHarmony.duration;
-  if (measureEnd - lastEnd >= minDuration) {
-    return true;
+  if (sortedHarmonies.length > 0) {
+    const lastHarmony = sortedHarmonies[sortedHarmonies.length - 1];
+    const lastEnd = lastHarmony.startBeat + lastHarmony.duration;
+    if (measureEnd - lastEnd >= minDuration) {
+      return true;
+    }
   }
 
   return false;
@@ -613,7 +605,7 @@ const addHarmony = (measureIndex: number) => {
     );
 
     // 尝试在小节开始放置
-    if (sortedHarmonies[0].startBeat - measureStartBeat >= 1) {
+    if (sortedHarmonies.length > 0 && sortedHarmonies[0].startBeat - measureStartBeat >= 1) {
       startBeat = measureStartBeat;
       duration = Math.min(sortedHarmonies[0].startBeat - measureStartBeat, 2);
     } else {
@@ -634,7 +626,7 @@ const addHarmony = (measureIndex: number) => {
       }
 
       // 如果没有找到空隙，尝试在最后放置
-      if (!placed) {
+      if (!placed && sortedHarmonies.length > 0) {
         const lastHarmony = sortedHarmonies[sortedHarmonies.length - 1];
         const lastEnd = lastHarmony.startBeat + lastHarmony.duration;
         const availableSpace = measureEndBeat - lastEnd;
@@ -765,7 +757,7 @@ const handleDrag = (event: MouseEvent) => {
     props.segment.id,
     quantizedBeat,
     currentHarmony.duration,
-    draggedHarmonyId.value
+    draggedHarmonyId.value || undefined
   );
 
   // 更新预览位置状态

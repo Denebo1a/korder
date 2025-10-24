@@ -55,7 +55,6 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted, nextTick } from 'vue';
 import { usePlayerStore } from '../stores/player';
-import type { HarmonySegment } from '../types/progression';
 
 const store = usePlayerStore();
 

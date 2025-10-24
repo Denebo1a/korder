@@ -134,7 +134,12 @@ export const applyAccidental = (rootNote: string, accidental?: string): string =
 export const degreeToNoteName = (degree: string, accidental?: string, key?: string): string => {
   if (!degree || !key) return 'C'
   
-  const scale = keyScales[key] || keyScales['C']
+  const scale = keyScales[key]
+  if (!scale) {
+    console.warn(`Unknown key: ${key}, falling back to C major`)
+    return keyScales['C'][0] || 'C'
+  }
+  
   const degreeIndex = degreeToIndex[degree] || 0
   const rootNote = scale[degreeIndex] || 'C'
   

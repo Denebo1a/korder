@@ -245,7 +245,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, nextTick } from "vue";
+import { ref, onMounted, onUnmounted, computed } from "vue";
 import {
   DocumentAdd,
   FolderOpened,
@@ -261,7 +261,6 @@ import { usePlayerStore } from "./stores/player";
 import type { ProgressionFile, HarmonySegment } from "./types/progression";
 import * as transport from "./services/transport";
 import * as wave from "./services/wave";
-import emptyImage from "./assets/img/side-panel-empty.png";
 
 const store = usePlayerStore();
 
@@ -892,7 +891,8 @@ const startDragCursor = (event: MouseEvent) => {
 }
 
 .waveform-card {
-  position: relative;
+  margin-bottom: 20px;
+  width: 100%;
 }
 
 /* 响应式设计 */
